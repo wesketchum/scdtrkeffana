@@ -2,7 +2,7 @@
 
 art_make(
 	  MODULE_LIBRARIES
-			ub_UserAnalysis
+			ub_TrkEffAlg
 #			Geometry
 #	  	        Geometry_service
 #		        Utilities

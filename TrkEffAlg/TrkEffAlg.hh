@@ -1,5 +1,5 @@
 /**
- * \file UserAnalysis.h
+ * \file TrkEffAlg.h
  *
  * 
  * \brief Little sample program for establishing a user analysis space.
@@ -14,19 +14,19 @@
 
 #include "TTree.h"
 
-namespace test{
-  class UserAnalysis;
+namespace trkeff{
+  class TrkEffAlg;
 }
 
-class test::UserAnalysis{
+class trkeff::TrkEffAlg{
   
 public:
   
   /// Default constructor
-  UserAnalysis();
+  TrkEffAlg();
 
   /// Default destructor
-  virtual ~UserAnalysis(){};
+  virtual ~TrkEffAlg(){};
 
   void RunAnalysis();
   void SetupOutputTree(TTree*);
