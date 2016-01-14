@@ -1,8 +1,23 @@
-# ubuseranalysis
-Skeleton analysis class for starting a LArSoft analyzer
+# scdtrkeffana
 
-UserAnalysis: a simple analysis class that you can write your own piece of code in
-UserAnalyzer: a simple LArSoft Analyzer that calls the UserAnalysis object above
-tools/rename.py: a script to rename your area so that you can set up your own development
+Repository for work on measuring tracking efficiency in uboone LArTPC using cosmic ray data.
 
-Do "python tools/rename.py -h" for help
+To use this repository, you should do the following:
+
+Make a new installation of larsoft, uboone flavor:
+--- <source your various setup scripts>
+--- setup uboonecode v04_32_01 -qe9:prof (may be different version in future ... check ups/product_deps)
+--- mkdir my_dev_area; cd my_dev_area; mrb newDev
+--- source localProducts_uboonecode_v04_32_01_e9_prof/setup
+
+Now get the repository using mrb
+--- cd srcs
+--- mrb g https://github.com/wesketchum/scdtrkeffana.git
+
+Then do the normal routines for building (you can do 'python scdtrkeffana/tools/useful_info.py')
+
+You will probably want access to the repository: easiest with a github account (let me know yours).
+OR
+I can pull from your local repository so long as I have permissions to see it and you let me know when you want me to pull
+(max I'm willing to do: once a week.)
+
