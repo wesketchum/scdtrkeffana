@@ -3,9 +3,11 @@
 art_make_library( LIBRARY_NAME  ub_TrkEffTagAlgs
 	SOURCE TagCreatorAlg.cxx
 	LIBRARIES
-		 RecoBase
-		 ${FHICLCPP}
-                 ${ROOT_BASIC_LIB_LIST}
+		Geometry
+		RecoBase
+		${FHICLCPP}
+                ${ROOT_BASIC_LIB_LIST}
+                ${CETLIB}
 
 )
 
