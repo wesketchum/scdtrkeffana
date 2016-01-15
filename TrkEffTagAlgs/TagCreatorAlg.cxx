@@ -30,7 +30,8 @@ void trkeff::TagCreatorAlg::FillConfigParameters(fhicl::ParameterSet const& p){
 }
 
 void trkeff::TagCreatorAlg::ProcessConfigParameters(geo::GeometryCore const& geo){
-
+  fNplanes = geo.Nplanes();
+  
   if(fLineMaxChiSquare<=0)
     throw cet::exception("trkeff::TagCreatorAlg::Configure")
       << "LineMaxChiSquare must be greater than zero\n";
@@ -39,22 +40,22 @@ void trkeff::TagCreatorAlg::ProcessConfigParameters(geo::GeometryCore const& geo
       << "TimeMatch must be greater than zero\n";
 
   if(fTagWiresPerPlane.size()==1)
-    fTagWiresPerPlane = std::vector<unsigned int>(geo.Nplanes(),fTagWiresPerPlane[0]);
-  if(fTagWiresPerPlane.size()!=geo.Nviews())
+    fTagWiresPerPlane = std::vector<unsigned int>(fNplanes,fTagWiresPerPlane[0]);
+  if(fTagWiresPerPlane.size()!=fNplanes)
     throw cet::exception("trkeff::TagCreatorAlg::Configure")
-      << "TagWiresPerPlane must have size Nviews=" << geo.Nviews() << ".\n";
+      << "TagWiresPerPlane must have size Nplanes=" << fNplanes << ".\n";
 
   if(fMinHitAmplitudes.size()==1)
-    fMinHitAmplitudes = std::vector<double>(geo.Nviews(),fMinHitAmplitudes[0]);
-  if(fMinHitAmplitudes.size()!=geo.Nviews())
+    fMinHitAmplitudes = std::vector<double>(fNplanes,fMinHitAmplitudes[0]);
+  if(fMinHitAmplitudes.size()!=fNplanes)
     throw cet::exception("trkeff::TagCreatorAlg::Configure")
-      << "fMinHitAmplitudes must have size Nviews=" << geo.Nviews() << ".\n";
+      << "fMinHitAmplitudes must have size Nplanes=" << fNplanes << ".\n";
 
   if(fMaxHitAmplitudes.size()==1)
-    fMaxHitAmplitudes = std::vector<double>(geo.Nviews(),fMaxHitAmplitudes[0]);
-  if(fMaxHitAmplitudes.size()!=geo.Nviews())
+    fMaxHitAmplitudes = std::vector<double>(fNplanes,fMaxHitAmplitudes[0]);
+  if(fMaxHitAmplitudes.size()!=fNplanes)
     throw cet::exception("trkeff::TagCreatorAlg::Configure")
-      << "fMinHitAmplitudes must have size Nviews=" << geo.Nviews() << ".\n";
+      << "fMinHitAmplitudes must have size Nplanes=" << fNplanes << ".\n";
 
   for(size_t i_p=0; i_p<geo.Nviews(); ++i_p){
     if(fMaxHitAmplitudes[i_p]<fMinHitAmplitudes[i_p])
@@ -72,6 +73,7 @@ void trkeff::TagCreatorAlg::ProcessConfigParameters(geo::GeometryCore const& geo
   for (size_t i_s=0; i_s<fSearchRegions.size(); ++i_s)
     TranslateSearchRegion(i_s,geo);
   
+  fSortedHitsIndex.resize(fSearchRegionsWires.size(),std::vector< std::vector<size_t> >(geo.Nplanes()));
     
   
 }
@@ -154,6 +156,34 @@ void trkeff::TagCreatorAlg::Configure( fhicl::ParameterSet const& p, geo::Geomet
   FillConfigParameters(p);
   ProcessConfigParameters(geo);
 }
+
+void trkeff::TagCreatorAlg::Cleanup(){
+  for(auto & hits_per_search_reg : fSortedHitsIndex)
+    for(auto & hits_per_plane : hits_per_search_reg)
+      hits_per_plane.clear();
+
+}
+
+void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit> const& hit_collection){
+  SortHitsBySearchRegion(hit_collection);
+  
+}
+
+void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection){
+
+  for(size_t i_h=0; i_h<hit_collection.size(); i_h++){
+      unsigned int planeID = hit_collection[i_h].WireID().planeID().Plane;
+      for(size_t i_s=0; i_s<fSearchRegionsWires.size(); ++i_s){
+	if(hit_collection[i_h].WireID().Wire>=fSearchRegionsWires[i_s][planeID][0].Wire &&
+	   hit_collection[i_h].WireID().Wire<=fSearchRegionsWires[i_s][planeID][1].Wire &&
+	   hit_collection[i_h].PeakAmplitude() > fMinHitAmplitudes[planeID] &&
+	   hit_collection[i_h].PeakAmplitude() < fMaxHitAmplitudes[planeID])
+	  fSortedHitsIndex[i_s][planeID].push_back(i_h);
+      }
+  }
+
+}
+
 
 
 #endif

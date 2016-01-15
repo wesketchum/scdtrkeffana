@@ -46,9 +46,10 @@ public:
   std::vector< double >              fMaxHitAmplitudes;     // max hit ampltidues per plane
 
   //internal data
+  unsigned int fNplanes;
   std::vector< std::vector<geo::View_t> > fViewCombinations;
   std::vector< std::vector< std::vector<geo::WireID> > > fSearchRegionsWires; //per search region, per plane, [start,end]
-  std::vector< std::vector< std::vector<size_t> > > fSortedHitsIndex;
+  std::vector< std::vector< std::vector<size_t> > > fSortedHitsIndex; //per search region, per plane
 
   //internal functions
   void FillConfigParameters(fhicl::ParameterSet const&);
@@ -56,7 +57,8 @@ public:
   void TranslateSearchRegion(size_t, geo::GeometryCore const&);
   void SetViewCombination(std::string const&,geo::GeometryCore const&);
   void SortHitsBySearchRegion(std::vector<recob::Hit> const&);
-  std::vector<size_t> ClusterHits( std::vector<size_t> const& );
+  std::vector<size_t> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const& );
+  void Cleanup();
   
   TTree*      fTree;
   
