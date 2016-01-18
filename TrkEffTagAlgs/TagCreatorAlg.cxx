@@ -152,6 +152,35 @@ void trkeff::TagCreatorAlg::TranslateSearchRegion(size_t i_s, geo::GeometryCore 
   
 }
 
+void trkeff::TagCreatorAlg::PrintSearchRegionsWires(){
+
+  std::cout << "YZ Search regions: " << fSearchRegions.size()
+	    << "\tWire search regions: " << fSearchRegionsWires.size()
+	    << std::endl;
+
+  if(fSearchRegions.size()!=fSearchRegionsWires.size())
+    throw cet::exception("trkeff::TagCreatorAlg::PrintSearchRegionsWires")
+      << "Search regions not of similar size\n";
+
+  
+  for(size_t i_s=0; i_s<fSearchRegions.size(); ++i_s){
+
+    std::cout << "Search region " << i_s << ": "
+	      << "\ty1,z1,y2,z2, = ";
+    for(auto const& var : fSearchRegions[i_s])
+      std::cout << var << ",";
+    for(size_t i_p=0; i_p<fSearchRegionsWires.size(); ++i_p)
+      std::cout << "\n\tPlane " << i_p << ": ["
+		<< fSearchRegionsWires[i_s][i_p][0] << ","
+		<< fSearchRegionsWires[i_s][i_p][1];
+    std::cout << std::endl;
+       
+  }
+
+}
+
+
+
 void trkeff::TagCreatorAlg::Configure( fhicl::ParameterSet const& p, geo::GeometryCore const& geo){
   FillConfigParameters(p);
   ProcessConfigParameters(geo);

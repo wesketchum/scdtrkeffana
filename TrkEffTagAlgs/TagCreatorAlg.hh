@@ -59,6 +59,10 @@ public:
   void SortHitsBySearchRegion(std::vector<recob::Hit> const&);
   std::vector<size_t> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const& );
   void Cleanup();
+
+  //checking functions
+  void PrintSearchRegionsWires();
+
   
   TTree*      fTree;
   
