@@ -27,6 +27,7 @@ void trkeff::TagCreatorAlg::FillConfigParameters(fhicl::ParameterSet const& p){
   fTimeMatch = p.get< double >("TimeMatch");
   fMinHitAmplitudes = p.get< std::vector<double> >("MinHitAmplitudes");
   fMaxHitAmplitudes = p.get< std::vector<double> >("MaxHitAmplitudes");
+  fDebug = p.get<bool>("Debug",false);
 }
 
 void trkeff::TagCreatorAlg::ProcessConfigParameters(geo::GeometryCore const& geo){
@@ -169,7 +170,7 @@ void trkeff::TagCreatorAlg::PrintSearchRegionsWires(){
 	      << "\ty1,z1,y2,z2, = ";
     for(auto const& var : fSearchRegions[i_s])
       std::cout << var << ",";
-    for(size_t i_p=0; i_p<fSearchRegionsWires.size(); ++i_p)
+    for(size_t i_p=0; i_p<fSearchRegionsWires[i_s].size(); ++i_p)
       std::cout << "\n\tPlane " << i_p << ": ["
 		<< fSearchRegionsWires[i_s][i_p][0] << ","
 		<< fSearchRegionsWires[i_s][i_p][1];
@@ -179,11 +180,37 @@ void trkeff::TagCreatorAlg::PrintSearchRegionsWires(){
 
 }
 
+void trkeff::TagCreatorAlg::PrintHitsBySearchRegion(){
+
+  std::cout << "Wire search regions: " << fSearchRegionsWires.size()
+	    << "Sorted hits collection: " << fSortedHitsIndex.size()
+	    << std::endl;
+
+  if(fSearchRegionsWires.size()!=fSortedHitsIndex.size())
+    throw cet::exception("trkeff::TagCreatorAlg::PrintHitsBySearchRegion")
+      << "Sorted hits not same size as search regions\n";
+
+  
+  for(size_t i_s=0; i_s<fSearchRegionsWires.size(); ++i_s){
+
+    std::cout << "Search region " << i_s << ": " << std::endl;
+    for(size_t i_p=0; i_p<fSearchRegionsWires.size(); ++i_p){
+      std::cout << "\tPlane " << i_p << " ["
+		<< fSearchRegionsWires[i_s][i_p][0] << ","
+		<< fSearchRegionsWires[i_s][i_p][1] << "] : " << std::endl;
+      for(size_t i_h=0; i_h<fSortedHitsIndex[i_s][i_p].size(); ++i_h)
+	std::cout << "\t\tHit index " << fSortedHitsIndex[i_s][i_p][i_h] << std::endl;
+    }
+       
+  }
+
+}
 
 
 void trkeff::TagCreatorAlg::Configure( fhicl::ParameterSet const& p, geo::GeometryCore const& geo){
   FillConfigParameters(p);
   ProcessConfigParameters(geo);
+  if(fDebug) PrintSearchRegionsWires();
 }
 
 void trkeff::TagCreatorAlg::Cleanup(){
@@ -195,7 +222,7 @@ void trkeff::TagCreatorAlg::Cleanup(){
 
 void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit> const& hit_collection){
   SortHitsBySearchRegion(hit_collection);
-  
+  if(fDebug) PrintHitsBySearchRegion();
 }
 
 void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection){

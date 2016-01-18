@@ -44,7 +44,9 @@ public:
   double                             fTimeMatch;            // time matching condition for hits across planes
   std::vector< double >              fMinHitAmplitudes;     // min hit amplitudes per plane
   std::vector< double >              fMaxHitAmplitudes;     // max hit ampltidues per plane
+  bool                               fDebug; //run functions for debugging
 
+  
   //internal data
   unsigned int fNplanes;
   std::vector< std::vector<geo::View_t> > fViewCombinations;
@@ -62,6 +64,7 @@ public:
 
   //checking functions
   void PrintSearchRegionsWires();
+  void PrintHitsBySearchRegion();
 
   
   TTree*      fTree;
