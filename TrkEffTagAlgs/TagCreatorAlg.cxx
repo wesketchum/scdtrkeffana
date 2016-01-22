@@ -270,12 +270,28 @@ void trkeff::TagCreatorAlg::RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> c
 
 }
 
-std::vector<size_t> ClusterHits( std::vector<recob::Hit> const& hit_collection, std::vector<size_t> const& hit_index){
+std::vector<size_t> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob::Hit> const& hit_collection, std::vector<size_t> const& hit_index){
 
+  // Select the hits to cluster, the hit indices are marked by the hit_index vector
+  // I'm doing this here temporarily, I'm not sure how much of DBScanAlg should be modified
+  std::vector<recob::Hit> hit_collection_cluster;
+  for(size_t i_h=0; i_h<hit_index.size(); i_h++){
+    hit_collection_cluster.push_back(hit_collection[hit_index[i_h]]);
+  }
+
+  // Initialize the fDBScan object, this also clears out any data from previous scans
+  fDBScan.InitScan(hit_collection_cluster, std::set<uint32_t>());
+
+  // Run the algorithm
+  fDBScan.run_cluster();
+
+  // Now we fill the hit_cluster vector with cluster numbers for each hit
+  // The fpointId_to_clusterId function provides the cluster id
   std::vector<size_t> hit_cluster;
-
-
-
+  hit_cluster.resize(hit_collection_cluster.size());
+  for(size_t i_h = 0; i_h < fDBScan.fpointId_to_clusterId.size(); ++i_h){	  
+    hit_cluster[i_h] = fDBScan.fpointId_to_clusterId[i_h];
+  }
 
   return hit_cluster;
 
