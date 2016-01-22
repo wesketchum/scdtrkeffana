@@ -15,6 +15,7 @@
 
 namespace recob{ class Hit; }
 namespace geo{ class GeometryCore; }
+namespace util{ class DetectorProperties; }
 
 namespace trkeff{
   class TagCreatorAlg;
@@ -29,7 +30,7 @@ public:
 
   void Configure( fhicl::ParameterSet const&, geo::GeometryCore const& );
 
-  void CreateTags( std::vector<recob::Hit> const&);
+  void CreateTags( std::vector<recob::Hit> const&, util::DetectorProperties &);
   
   /// Default destructor
   virtual ~TagCreatorAlg(){};
@@ -58,14 +59,18 @@ public:
   //internal data
   std::vector<WireIDRegionByPlane_t> fSearchRegionsWires; //per search region, per plane, [start,end]
   std::vector<HitMapByPlane_t>   fSortedHitsIndex; //per search region, per plane
+  std::vector<double> fTimeCorrections; //time corrections per plane
 
+  
   //internal functions
   void FillConfigParameters(fhicl::ParameterSet const&);
   void ProcessConfigParameters(geo::GeometryCore const&);
   void TranslateSearchRegion(size_t, geo::GeometryCore const&);
   void SetPlaneCombination(geo::GeometryCore const&);
   void SortHitsBySearchRegion(std::vector<recob::Hit> const&);
-  void RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> const&, HitMapByPlane_t & hitmaps);
+  void RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> const&,
+				  HitMapByPlane_t & hitmaps,
+				  util::DetectorProperties &);
   std::vector<size_t> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const& );
   void Cleanup();
 

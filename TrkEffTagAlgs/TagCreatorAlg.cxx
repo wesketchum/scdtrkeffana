@@ -8,6 +8,7 @@
 #include "RecoBase/Hit.h"
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "Geometry/GeometryCore.h"
+#include "Utilities/DetectorProperties.h"
 
 #include "TagCreatorAlg.hh"
 
@@ -183,9 +184,21 @@ void trkeff::TagCreatorAlg::Cleanup(){
 
 }
 
-void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit> const& hit_collection){
+void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit> const& hit_collection,
+					util::DetectorProperties & detprop){
+
   SortHitsBySearchRegion(hit_collection);
-  if(fDebug) PrintHitsBySearchRegion();
+  if(fDebug) {
+    std::cout << "Hits per search region before pruning by time." << std::endl;
+    PrintHitsBySearchRegion();
+  }
+
+  for(auto & sr : fSortedHitsIndex)
+    RemoveHitsWithoutTimeMatch(hit_collection,sr,detprop);
+  if(fDebug) {
+    std::cout << "Hits per search region after pruning by time." << std::endl;
+    PrintHitsBySearchRegion();
+  }
 }
 
 void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection){
@@ -199,15 +212,56 @@ void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const
 	 hit_collection[i_h].WireID().Wire<=fSearchRegionsWires[i_s][i_p][1].Wire &&
 	 hit_collection[i_h].PeakAmplitude() > fMinHitAmplitudes[i_p] &&
 	 hit_collection[i_h].PeakAmplitude() < fMaxHitAmplitudes[i_p])
-	  fSortedHitsIndex[i_s][i_p][hit_collection[i_h].PeakTime()] = i_h;
+	fSortedHitsIndex[i_s][i_p][hit_collection[i_h].PeakTime()] = i_h;
     }
   }
   
 }
 
 void trkeff::TagCreatorAlg::RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> const& hit_collection,
-						       HitMapByPlane_t & hitmaps){
+						       HitMapByPlane_t & hitmaps,
+						       util::DetectorProperties & detprop){
 
+  if(hitmaps.size()<2) return;
+
+  HitMapByPlane_t new_hitmaps(hitmaps.size()-1);
+  
+  for(HitMap_t::iterator iter_hit=hitmaps.back().begin();
+      iter_hit!=hitmaps.back().end();
+      ++iter_hit){
+
+    for(size_t i_p=0; i_p<new_hitmaps.size(); ++i_p){
+
+      for(HitMap_t::reverse_iterator iter_hit_p =
+	    HitMap_t::reverse_iterator(std::next(hitmaps[i_p].lower_bound(iter_hit->first)));
+	  iter_hit_p!=hitmaps[i_p].rend();
+	  ++iter_hit_p)
+	{
+	  if(std::abs( (iter_hit->first-detprop.GetXTicksOffset((int)(hitmaps.size()-1),0,0)) - 
+		       (iter_hit_p->first-detprop.GetXTicksOffset((int)i_p,0,0))
+		       )>fTimeMatch)
+	    break;
+	  new_hitmaps[i_p].insert(*iter_hit_p);
+	}
+      for(HitMap_t::iterator iter_hit_p =
+	    hitmaps[i_p].upper_bound(iter_hit->first);
+	  iter_hit_p!=hitmaps[i_p].end();
+	  ++iter_hit_p)
+	{
+	  if(std::abs( (iter_hit->first-detprop.GetXTicksOffset((int)(hitmaps.size()-1),0,0)) - 
+		       (iter_hit_p->first-detprop.GetXTicksOffset((int)i_p,0,0))
+		       )>fTimeMatch)
+	    break;
+	  new_hitmaps[i_p].insert(*iter_hit_p);
+	}
+
+
+    }
+    
+  }
+
+  for(size_t i_p=0; i_p<new_hitmaps.size(); ++i_p)
+    hitmaps[i_p].swap(new_hitmaps[i_p]);
   
 
 }
