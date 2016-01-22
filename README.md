@@ -15,6 +15,10 @@ Now get the repository using mrb
 * mrb g https://github.com/wesketchum/scdtrkeffana.git
 * mrb uc
 
+Next you'll need to grab a branch of larreco to get changes to clustering algorithms
+* cd larreco
+* git checkout feature/bcarls_scdtrkeffana
+
 Then do the normal routines for building (you can do 'python scdtrkeffana/tools/useful_info.py')
 
 You will probably want access to the repository: easiest with a github account (let me know yours).
