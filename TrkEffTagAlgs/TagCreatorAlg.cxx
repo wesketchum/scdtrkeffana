@@ -8,8 +8,10 @@
 #include "RecoBase/Hit.h"
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "Geometry/GeometryCore.h"
+#include "RecoAlg/DBScanAlg.h"
 
 #include "TagCreatorAlg.hh"
+
 
 trkeff::TagCreatorAlg::TagCreatorAlg()
 {}
@@ -19,7 +21,8 @@ void trkeff::TagCreatorAlg::SetupOutputTree(TTree* tfs_tree){
   fTree->SetObject(fTree->GetName(),"TagCreatorAlg Tree");
 }
 
-void trkeff::TagCreatorAlg::FillConfigParameters(fhicl::ParameterSet const& p){
+void trkeff::TagCreatorAlg::FillConfigParameters(fhicl::ParameterSet const& p)
+{
   fSearchRegions = p.get< std::vector< std::vector<double> > >("SearchRegions");
   fTagWiresPerPlane = p.get< std::vector<unsigned int> >("TagWiresPerPlane");
   fLineMaxChiSquare = p.get< double >("LineMaxChiSquare");
@@ -27,6 +30,7 @@ void trkeff::TagCreatorAlg::FillConfigParameters(fhicl::ParameterSet const& p){
   fTimeMatch = p.get< double >("TimeMatch");
   fMinHitAmplitudes = p.get< std::vector<double> >("MinHitAmplitudes");
   fMaxHitAmplitudes = p.get< std::vector<double> >("MaxHitAmplitudes");
+  fDBScan.reconfigure(p.get< fhicl::ParameterSet >("DBScanAlg"));
   fDebug = p.get<bool>("Debug",false);
 }
 
@@ -239,6 +243,22 @@ void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const
   }
 
 }
+
+
+std::vector<size_t> ClusterHits( std::vector<recob::Hit> const& hit_collection, std::vector<size_t> const& hit_index){
+
+  std::vector<size_t> hit_cluster;
+
+
+
+
+  return hit_cluster;
+
+}
+
+
+
+
 
 
 

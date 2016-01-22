@@ -13,6 +13,7 @@
 
 namespace recob{ class Hit; }
 namespace geo{ class GeometryCore; }
+namespace cluster{ class DBScanAlg; }
 
 namespace trkeff{
   class TagCreatorAlg;
@@ -53,13 +54,16 @@ public:
   std::vector< std::vector< std::vector<geo::WireID> > > fSearchRegionsWires; //per search region, per plane, [start,end]
   std::vector< std::vector< std::vector<size_t> > > fSortedHitsIndex; //per search region, per plane
 
+  // dbscan object
+  cluster::DBScanAlg fDBScan;
+
   //internal functions
   void FillConfigParameters(fhicl::ParameterSet const&);
   void ProcessConfigParameters(geo::GeometryCore const&);
   void TranslateSearchRegion(size_t, geo::GeometryCore const&);
   void SetViewCombination(std::string const&,geo::GeometryCore const&);
   void SortHitsBySearchRegion(std::vector<recob::Hit> const&);
-  std::vector<size_t> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const& );
+  std::vector<size_t> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const& ); // 
   void Cleanup();
 
   //checking functions
