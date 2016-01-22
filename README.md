@@ -11,8 +11,9 @@ Make a new installation of larsoft, uboone flavor:
 --- source localProducts_uboonecode_v04_33_00_e9_prof/setup
 
 Now get the repository using mrb
---- cd srcs
---- mrb g https://github.com/wesketchum/scdtrkeffana.git
+* cd srcs
+* mrb g https://github.com/wesketchum/scdtrkeffana.git
+* mrb uc
 
 Then do the normal routines for building (you can do 'python scdtrkeffana/tools/useful_info.py')
 
