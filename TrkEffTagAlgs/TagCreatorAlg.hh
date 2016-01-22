@@ -62,27 +62,20 @@ public:
   std::vector<HitMapByPlane_t>   fSortedHitsIndex; //per search region, per plane
   std::vector<double> fTimeCorrections; //time corrections per plane
 
-<<<<<<< HEAD
   // dbscan object
   cluster::DBScanAlg fDBScan;
 
-=======
   
->>>>>>> develop
   //internal functions
   void FillConfigParameters(fhicl::ParameterSet const&);
   void ProcessConfigParameters(geo::GeometryCore const&);
   void TranslateSearchRegion(size_t, geo::GeometryCore const&);
   void SetPlaneCombination(geo::GeometryCore const&);
   void SortHitsBySearchRegion(std::vector<recob::Hit> const&);
-<<<<<<< HEAD
-  std::vector<size_t> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const& ); // 
-=======
   void RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> const&,
 				  HitMapByPlane_t & hitmaps,
 				  util::DetectorProperties &);
   std::vector<size_t> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const& );
->>>>>>> develop
   void Cleanup();
 
   //checking functions
