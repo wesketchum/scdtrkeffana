@@ -8,11 +8,8 @@
 #include "RecoBase/Hit.h"
 #include "SimpleTypesAndConstants/geo_types.h"
 #include "Geometry/GeometryCore.h"
-<<<<<<< HEAD
 #include "RecoAlg/DBScanAlg.h"
-=======
 #include "Utilities/DetectorProperties.h"
->>>>>>> develop
 
 #include "TagCreatorAlg.hh"
 

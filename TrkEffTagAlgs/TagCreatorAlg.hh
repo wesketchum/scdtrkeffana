@@ -15,11 +15,8 @@
 
 namespace recob{ class Hit; }
 namespace geo{ class GeometryCore; }
-<<<<<<< HEAD
 namespace cluster{ class DBScanAlg; }
-=======
 namespace util{ class DetectorProperties; }
->>>>>>> develop
 
 namespace trkeff{
   class TagCreatorAlg;
