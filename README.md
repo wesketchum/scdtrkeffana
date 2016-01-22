@@ -5,10 +5,10 @@ Repository for work on measuring tracking efficiency in uboone LArTPC using cosm
 To use this repository, you should do the following:
 
 Make a new installation of larsoft, uboone flavor:
---- <source your various setup scripts>
---- setup uboonecode v04_33_00 -qe9:prof (may be different version in future ... check ups/product_deps)
---- mkdir my_dev_area; cd my_dev_area; mrb newDev
---- source localProducts_uboonecode_v04_33_00_e9_prof/setup
+* <source your various setup scripts>
+* setup uboonecode v04_33_00 -qe9:prof (may be different version in future ... check ups/product_deps)
+* mkdir my_dev_area; cd my_dev_area; mrb newDev
+* source localProducts_uboonecode_v04_33_00_e9_prof/setup
 
 Now get the repository using mrb
 * cd srcs
