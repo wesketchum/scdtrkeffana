@@ -31,7 +31,10 @@ public:
 
   void Configure( fhicl::ParameterSet const&, geo::GeometryCore const& );
 
-  void CreateTags( std::vector<recob::Hit> const&, util::DetectorProperties &);
+  void CreateTags( std::vector<recob::Hit>  const&,
+		   geo::GeometryCore        const&,
+		   util::DetectorProperties &,
+		   util::LArProperties      const& );
   
   /// Default destructor
   virtual ~TagCreatorAlg(){};
@@ -75,7 +78,10 @@ public:
   void RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> const&,
 				  HitMapByPlane_t & hitmaps,
 				  util::DetectorProperties &);
-  std::vector<size_t> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const& );
+  std::vector<size_t> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const&,
+				   geo::GeometryCore const&,
+				   util::DetectorProperties const&,
+				   util::LArProperties const&);
   void Cleanup();
 
   //checking functions

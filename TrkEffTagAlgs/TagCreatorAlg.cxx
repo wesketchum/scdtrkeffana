@@ -188,21 +188,37 @@ void trkeff::TagCreatorAlg::Cleanup(){
 
 }
 
-void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit> const& hit_collection,
-					util::DetectorProperties & detprop){
-
+void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_collection,
+					geo::GeometryCore        const& geom,
+					util::DetectorProperties & detprop,
+					util::LArProperties      const& larprop){
+  
   SortHitsBySearchRegion(hit_collection);
   if(fDebug) {
     std::cout << "Hits per search region before pruning by time." << std::endl;
     PrintHitsBySearchRegion();
   }
 
-  for(auto & sr : fSortedHitsIndex)
+  for(auto & sr : fSortedHitsIndex){
     RemoveHitsWithoutTimeMatch(hit_collection,sr,detprop);
-  if(fDebug) {
-    std::cout << "Hits per search region after pruning by time." << std::endl;
-    PrintHitsBySearchRegion();
+    if(fDebug) {
+      std::cout << "Hits per search region after pruning by time." << std::endl;
+      PrintHitsBySearchRegion();
+    }
   }
+
+  
+  for(auto const& sr : fSortedHitsIndex){
+    for(auto const& hm : sr){
+      
+      //create temp vector ...
+      std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
+      for(auto const& ih : hm)
+	hit_indices.emplace_back(ih.second);
+      ClusterHits(hit_collection,hit_indices,geom,detprop,larprop);
+    }
+  }
+
 }
 
 void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection){
@@ -270,7 +286,10 @@ void trkeff::TagCreatorAlg::RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> c
 
 }
 
-std::vector<size_t> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob::Hit> const& hit_collection, std::vector<size_t> const& hit_index){
+std::vector<size_t> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob::Hit> const& hit_collection, std::vector<size_t> const& hit_index,
+							geo::GeometryCore        const& geom,
+							util::DetectorProperties const& detprop,
+							util::LArProperties      const& larprop){
 
   // Select the hits to cluster, the hit indices are marked by the hit_index vector
   // I'm doing this here temporarily, I'm not sure how much of DBScanAlg should be modified
@@ -280,7 +299,8 @@ std::vector<size_t> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob::Hit> 
   }
 
   // Initialize the fDBScan object, this also clears out any data from previous scans
-  fDBScan.InitScan(hit_collection_cluster, std::set<uint32_t>());
+  fDBScan.InitScan(hit_collection, hit_index, std::set<uint32_t>(),
+		   geom,larprop,detprop);
 
   // Run the algorithm
   fDBScan.run_cluster();
