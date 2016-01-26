@@ -16,6 +16,8 @@ Now get the repository using mrb
 * mrb uc
 
 Next you'll need to grab a branch of larreco to get changes to clustering algorithms
+* cd $MRB_SOURCE
+* mrb g laarreco
 * cd larreco
 * git checkout feature/bcarls_scdtrkeffana
 
