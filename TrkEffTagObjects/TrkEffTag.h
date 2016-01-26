@@ -12,7 +12,10 @@
 
 #include <stdint.h>
 #include <set>
-//#include <array>
+
+#ifndef __GCCXML__
+#include <array>
+#endif
 
 namespace trkeff {
 
@@ -42,18 +45,22 @@ namespace trkeff {
       double theta;
       double phi;
     } TrkEffTag_Tree_t;
-    /*
+    
     TrkEffTag(std::array<double,3> const& start, std::array<double,3> const& end,
 	      double const& chi2, std::set<geo::WireID> const& wires)
       {
-	fStartPoint = start;
-	fEndPoint   = end;
+	for(size_t i=0; i<3; i++){
+	  fStartPoint[i] = start[i];
+	  fEndPoint[i] = end[i];
+	}
+	//fStartPoint = start;
+	//fEndPoint   = end;
 	fChi2       = chi2;
 	fWires      = wires;
 
 	CalculateAngles();
       }    
-    */
+    
     TrkEffTag(double const start[], double const end[],
 	      double const& chi2, std::set<geo::WireID> const& wires)
       {
@@ -68,8 +75,8 @@ namespace trkeff {
 	CalculateAngles();
       }    
 
-    const double*  StartPoint() const;
-    const double*  EndPoint()   const;
+    std::array<double,3> StartPoint()  const;
+    std::array<double,3> EndPoint()    const;
     double                Chi2()       const;
     std::set<geo::WireID> Wires()      const;
     double                Theta()      const;
@@ -93,8 +100,11 @@ namespace trkeff {
   }; // class TrkEffTag()
   
 #ifndef __GCCXML__
-  inline const double*  trkeff::TrkEffTag::StartPoint() const { return fStartPoint; }
-  inline const double*  trkeff::TrkEffTag::EndPoint()   const { return fEndPoint;   }
+  inline std::array<double,3>  trkeff::TrkEffTag::StartPoint() const
+    { return std::array<double,3>{fStartPoint[0],fStartPoint[1],fStartPoint[2]}; }
+  inline std::array<double,3>  trkeff::TrkEffTag::EndPoint()   const
+    { return std::array<double,3>{fEndPoint[0],fEndPoint[1],fEndPoint[2]}; }
+  
   inline double                trkeff::TrkEffTag::Chi2()       const { return fChi2;       }
   inline std::set<geo::WireID> trkeff::TrkEffTag::Wires()      const { return fWires;      }
   inline double                trkeff::TrkEffTag::Theta()      const { return fTheta;      }
