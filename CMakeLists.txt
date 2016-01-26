@@ -51,6 +51,7 @@ include(ArtMake)
 include(BuildPlugins)
 
 # ADD SOURCE CODE SUBDIRECTORIES HERE
+add_subdirectory(TrkEffTagObjects)
 add_subdirectory(TrkEffAlg)
 add_subdirectory(TrkEffTagAlgs)
 add_subdirectory(TrkEffAnalyzer)
