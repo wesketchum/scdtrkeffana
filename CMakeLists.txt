@@ -54,7 +54,7 @@ include(BuildPlugins)
 add_subdirectory(TrkEffTagObjects)
 add_subdirectory(TrkEffAlg)
 add_subdirectory(TrkEffTagAlgs)
-add_subdirectory(TrkEffAnalyzer)
+add_subdirectory(TrkEffModules)
 
 # tests
 add_subdirectory(test)
