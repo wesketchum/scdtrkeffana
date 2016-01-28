@@ -11,11 +11,12 @@
 #include "TTree.h"
 
 //#include "RecoBase/Hit.h"
+#include "RecoAlg/DBScanAlg.h"
 #include "SimpleTypesAndConstants/geo_types.h"
 
 namespace recob{ class Hit; }
 namespace geo{ class GeometryCore; }
-namespace cluster{ class DBScanAlg; }
+//namespace cluster{ class DBScanAlg; }
 namespace util{ class DetectorProperties; }
 
 namespace trkeff{

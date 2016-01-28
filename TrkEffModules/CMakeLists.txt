@@ -3,15 +3,17 @@
 art_make(
 	  MODULE_LIBRARIES
 			ub_TrkEffAlg
-#			Geometry
-#	  	        Geometry_service
-#		        Utilities
+			ub_TrkEffTagAlgs
+			TrkEffTagObjects
+			Geometry
+	  	        Geometry_service
+		        Utilities
 #	       	        TimeService_service
 #	                uboone_Geometry
 #                      OpticalDetectorData
 #			OpticalDetector
  #                     RawData
-#			RecoBase
+			RecoBase
 #			Simulation
 #			SimulationBase
                         ${ART_FRAMEWORK_CORE}
