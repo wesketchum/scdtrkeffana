@@ -8,7 +8,7 @@
 <lcgdict>
 
   <class name="trkeff::TrkEffTag" ClassVersion="10">
-   <version ClassVersion="10" checksum="2381895196"/>
+   <version ClassVersion="10" checksum="1225889197"/>
   </class>
   
  <class name="std::vector<trkeff::TrkEffTag>"/>

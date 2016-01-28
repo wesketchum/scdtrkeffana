@@ -33,7 +33,7 @@ namespace trkeff {
     TrkEffTag_Tree(TrkEffTag const& tag) :
       x_start(tag.StartPoint()[0]), y_start(tag.StartPoint()[1]), z_start(tag.StartPoint()[2]),
 	x_end(tag.EndPoint()[0]), y_end(tag.EndPoint()[1]), z_end(tag.EndPoint()[2]),
-	chi2(tag.Chi2()), theta(tag.Theta()), phi(tag.Phi()) {}
+	chi2(tag.Chi2()), theta(tag.Theta()), thetaYZ(tag.ThetaYZ()), thetaXZ(tag.ThetaXZ()), phi(tag.Phi()) {}
       
       double x_start;
       double y_start;
@@ -43,6 +43,8 @@ namespace trkeff {
       double z_end;
       double chi2;
       double theta;
+      double thetaYZ;
+      double thetaXZ;
       double phi;
     } TrkEffTag_Tree_t;
     
@@ -75,11 +77,13 @@ namespace trkeff {
 	CalculateAngles();
       }    
 
-    std::array<double,3> StartPoint()  const;
-    std::array<double,3> EndPoint()    const;
+    std::array<double,3>  StartPoint()  const;
+    std::array<double,3>  EndPoint()    const;
     double                Chi2()       const;
     std::set<geo::WireID> Wires()      const;
     double                Theta()      const;
+    double                ThetaYZ()    const;
+    double                ThetaXZ()    const;
     double                Phi()        const;
 
     TrkEffTag_Tree_t GetRootTreeType() const;
@@ -93,6 +97,8 @@ namespace trkeff {
     std::set<geo::WireID> fWires;
     
     double fTheta;
+    double fThetaYZ;
+    double fThetaXZ;
     double fPhi;
 
     void CalculateAngles();
@@ -108,6 +114,8 @@ namespace trkeff {
   inline double                trkeff::TrkEffTag::Chi2()       const { return fChi2;       }
   inline std::set<geo::WireID> trkeff::TrkEffTag::Wires()      const { return fWires;      }
   inline double                trkeff::TrkEffTag::Theta()      const { return fTheta;      }
+  inline double                trkeff::TrkEffTag::ThetaYZ()    const { return fThetaYZ;    }
+  inline double                trkeff::TrkEffTag::ThetaXZ()    const { return fThetaXZ;    }
   inline double                trkeff::TrkEffTag::Phi()        const { return fPhi;        }
 
   inline trkeff::TrkEffTag::TrkEffTag_Tree_t trkeff::TrkEffTag::GetRootTreeType() const
