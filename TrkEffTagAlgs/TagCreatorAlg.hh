@@ -75,10 +75,9 @@ public:
   void ProcessConfigParameters(geo::GeometryCore const&);
   void TranslateSearchRegion(size_t, geo::GeometryCore const&);
   void SetPlaneCombination(geo::GeometryCore const&);
-  void SortHitsBySearchRegion(std::vector<recob::Hit> const&);
+  void SortHitsBySearchRegion(std::vector<recob::Hit> const&, util::DetectorProperties &);
   void RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> const&,
-				  HitMapByPlane_t & hitmaps,
-				  util::DetectorProperties &);
+				  HitMapByPlane_t & hitmaps);
   std::vector<size_t> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const&,
 				   geo::GeometryCore const&,
 				   util::DetectorProperties const&,
