@@ -218,7 +218,6 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
       ClusterHits(hit_collection,hit_indices,geom,detprop,larprop);
     }
   }
-
 }
 
 void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection){
@@ -275,18 +274,17 @@ void trkeff::TagCreatorAlg::RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> c
 	  new_hitmaps[i_p].insert(*iter_hit_p);
 	}
 
-
     }
     
   }
 
   for(size_t i_p=0; i_p<new_hitmaps.size(); ++i_p)
     hitmaps[i_p].swap(new_hitmaps[i_p]);
-  
 
 }
 
-std::vector<size_t> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob::Hit> const& hit_collection, std::vector<size_t> const& hit_index,
+std::vector<size_t> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob::Hit> const& hit_collection, 
+							std::vector<size_t> const& hit_index,
 							geo::GeometryCore        const& geom,
 							util::DetectorProperties const& detprop,
 							util::LArProperties      const& larprop){
@@ -305,6 +303,21 @@ std::vector<size_t> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob::Hit> 
   // Run the algorithm
   fDBScan.run_cluster();
 
+
+  // Want to get relation of clusters to hits
+  for(size_t i_c = 0; i_c < fDBScan.fclusters.size(); ++i_c){
+    // The hits contained in a cluster
+    std::vector<size_t> cluster_hits;
+    for(size_t i_h = 0; i_h < fDBScan.fpointId_to_clusterId.size(); ++i_h){	  
+      if(fDBScan.fpointId_to_clusterId[i_h]== i_c){
+	cluster_hits.push_back(i_h);
+      }
+    }
+  }
+
+
+
+
   // Now we fill the hit_cluster vector with cluster numbers for each hit
   // The fpointId_to_clusterId function provides the cluster id
   std::vector<size_t> hit_cluster;
@@ -316,9 +329,6 @@ std::vector<size_t> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob::Hit> 
   return hit_cluster;
 
 }
-
-
-
 
 
 
