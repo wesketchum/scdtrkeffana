@@ -151,6 +151,7 @@ void trkeff::TagCreatorAlg::PrintSearchRegionsWires(){
 void trkeff::TagCreatorAlg::PrintHitsBySearchRegion(){
 
   std::cout << "Wire search regions: " << fSearchRegionsWires.size()
+	    << std::endl
 	    << "Sorted hits collection: " << fSortedHitsIndex.size()
 	    << std::endl;
 
@@ -166,8 +167,8 @@ void trkeff::TagCreatorAlg::PrintHitsBySearchRegion(){
       std::cout << "\tPlane " << i_p << " ["
 		<< fSearchRegionsWires[i_s][i_p][0] << ","
 		<< fSearchRegionsWires[i_s][i_p][1] << "] : " << std::endl;
-      for(size_t i_h=0; i_h<fSortedHitsIndex[i_s][i_p].size(); ++i_h)
-	std::cout << "\t\tHit index " << fSortedHitsIndex[i_s][i_p][i_h] << std::endl;
+      for(auto const& i_h : fSortedHitsIndex[i_s][i_p])
+	std::cout << "\t\tHit: (time,index) = (" << i_h.first << "," << i_h.second << ")" << std::endl;
     }
        
   }
