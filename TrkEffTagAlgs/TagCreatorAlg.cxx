@@ -151,6 +151,7 @@ void trkeff::TagCreatorAlg::PrintSearchRegionsWires(){
 void trkeff::TagCreatorAlg::PrintHitsBySearchRegion(){
 
   std::cout << "Wire search regions: " << fSearchRegionsWires.size()
+	    << std::endl
 	    << "Sorted hits collection: " << fSortedHitsIndex.size()
 	    << std::endl;
 
@@ -166,8 +167,8 @@ void trkeff::TagCreatorAlg::PrintHitsBySearchRegion(){
       std::cout << "\tPlane " << i_p << " ["
 		<< fSearchRegionsWires[i_s][i_p][0] << ","
 		<< fSearchRegionsWires[i_s][i_p][1] << "] : " << std::endl;
-      for(size_t i_h=0; i_h<fSortedHitsIndex[i_s][i_p].size(); ++i_h)
-	std::cout << "\t\tHit index " << fSortedHitsIndex[i_s][i_p][i_h] << std::endl;
+      for(auto const& i_h : fSortedHitsIndex[i_s][i_p])
+	std::cout << "\t\tHit: (time,index) = (" << i_h.first << "," << i_h.second << ")" << std::endl;
     }
        
   }
@@ -193,14 +194,14 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
 					util::DetectorProperties & detprop,
 					util::LArProperties      const& larprop){
   
-  SortHitsBySearchRegion(hit_collection);
+  SortHitsBySearchRegion(hit_collection,detprop);
   if(fDebug) {
     std::cout << "Hits per search region before pruning by time." << std::endl;
     PrintHitsBySearchRegion();
   }
 
   for(auto & sr : fSortedHitsIndex){
-    RemoveHitsWithoutTimeMatch(hit_collection,sr,detprop);
+    RemoveHitsWithoutTimeMatch(hit_collection,sr);
     if(fDebug) {
       std::cout << "Hits per search region after pruning by time." << std::endl;
       PrintHitsBySearchRegion();
@@ -220,7 +221,8 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
   }
 }
 
-void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection){
+void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection,
+						   util::DetectorProperties & detprop){
 
   for(size_t i_h=0; i_h<hit_collection.size(); i_h++){
     
@@ -231,55 +233,41 @@ void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const
 	 hit_collection[i_h].WireID().Wire<=fSearchRegionsWires[i_s][i_p][1].Wire &&
 	 hit_collection[i_h].PeakAmplitude() > fMinHitAmplitudes[i_p] &&
 	 hit_collection[i_h].PeakAmplitude() < fMaxHitAmplitudes[i_p])
-	fSortedHitsIndex[i_s][i_p][hit_collection[i_h].PeakTime()] = i_h;
+	fSortedHitsIndex[i_s][i_p][hit_collection[i_h].PeakTime()-detprop.GetXTicksOffset(i_p,0,0)] = i_h;
     }
   }
   
 }
 
 void trkeff::TagCreatorAlg::RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> const& hit_collection,
-						       HitMapByPlane_t & hitmaps,
-						       util::DetectorProperties & detprop){
+						       HitMapByPlane_t & hitmaps){
 
   if(hitmaps.size()<2) return;
 
-  HitMapByPlane_t new_hitmaps(hitmaps.size()-1);
-  
-  for(HitMap_t::iterator iter_hit=hitmaps.back().begin();
-      iter_hit!=hitmaps.back().end();
-      ++iter_hit){
+  HitMapByPlane_t new_hitmaps(hitmaps.size());
 
-    for(size_t i_p=0; i_p<new_hitmaps.size(); ++i_p){
+  for(size_t i_p1=0; i_p1<new_hitmaps.size()-1; ++i_p1){
+    for(size_t i_p2=1; i_p2<new_hitmaps.size(); ++i_p2){
+      
+      for(auto const& i_h : hitmaps[i_p1]){
+	for(auto iter_hit=hitmaps[i_p2].lower_bound(i_h.first-fTimeMatch);
+	    iter_hit!=hitmaps[i_p2].end();
+	    iter_hit++){
 
-      for(HitMap_t::reverse_iterator iter_hit_p =
-	    HitMap_t::reverse_iterator(std::next(hitmaps[i_p].lower_bound(iter_hit->first)));
-	  iter_hit_p!=hitmaps[i_p].rend();
-	  ++iter_hit_p)
-	{
-	  if(std::abs( (iter_hit->first-detprop.GetXTicksOffset((int)(hitmaps.size()-1),0,0)) - 
-		       (iter_hit_p->first-detprop.GetXTicksOffset((int)i_p,0,0))
-		       )>fTimeMatch)
+	  if(std::abs(iter_hit->first-i_h.first)>fTimeMatch)
 	    break;
-	  new_hitmaps[i_p].insert(*iter_hit_p);
+	  new_hitmaps[i_p1].insert(i_h);
+	  new_hitmaps[i_p2].insert(*iter_hit);
 	}
-      for(HitMap_t::iterator iter_hit_p =
-	    hitmaps[i_p].upper_bound(iter_hit->first);
-	  iter_hit_p!=hitmaps[i_p].end();
-	  ++iter_hit_p)
-	{
-	  if(std::abs( (iter_hit->first-detprop.GetXTicksOffset((int)(hitmaps.size()-1),0,0)) - 
-		       (iter_hit_p->first-detprop.GetXTicksOffset((int)i_p,0,0))
-		       )>fTimeMatch)
-	    break;
-	  new_hitmaps[i_p].insert(*iter_hit_p);
-	}
-
+      }
+      
+      hitmaps[i_p1].swap(new_hitmaps[i_p1]);
+      hitmaps[i_p2].swap(new_hitmaps[i_p2]);
+      new_hitmaps[i_p1].clear();
+      new_hitmaps[i_p2].clear();
+      
     }
-    
   }
-
-  for(size_t i_p=0; i_p<new_hitmaps.size(); ++i_p)
-    hitmaps[i_p].swap(new_hitmaps[i_p]);
 
 }
 
