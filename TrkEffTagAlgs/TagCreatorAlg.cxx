@@ -217,6 +217,7 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
       for(auto const& ih : hm)
 	hit_indices.emplace_back(ih.second);
       ClusterHits(hit_collection,hit_indices,geom,detprop,larprop);
+      RawLeastSquaresFit(hit_collection,hit_indices);
     }
   }
 }
@@ -288,7 +289,17 @@ std::vector<unsigned int> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob:
   
 }
 
-
+void trkeff::TagCreatorAlg::RawLeastSquaresFit(std::vector<recob::Hit> const& hit_collection,
+					       std::vector<size_t> const& hit_index)
+{
+  fLSqFit.Clear();
+  auto result = fLSqFit.LinearFit(hit_collection,hit_index);
+  if(fDebug)
+    std::cout << "\t\tLeastSquares result: time = " << result.slope
+	      << " * wire + " << result.intercept
+	      << "\tchi2=" << result.chi2 << std::endl;
+  
+}
 
 
 #endif

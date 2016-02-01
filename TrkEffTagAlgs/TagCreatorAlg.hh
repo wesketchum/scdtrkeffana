@@ -12,6 +12,7 @@
 
 //#include "RecoBase/Hit.h"
 #include "RecoAlg/DBScanAlg.h"
+#include "LinearLeastSquaresFit.hh"
 #include "SimpleTypesAndConstants/geo_types.h"
 
 namespace recob{ class Hit; }
@@ -68,6 +69,7 @@ public:
 
   // dbscan object
   cluster::DBScanAlg fDBScan;
+  LinearLeastSquaresFit fLSqFit; 
 
   
   //internal functions
@@ -82,6 +84,8 @@ public:
 					 geo::GeometryCore const&,
 					 util::DetectorProperties const&,
 					 util::LArProperties const&);
+  void RawLeastSquaresFit(std::vector<recob::Hit> const&, std::vector<size_t> const&);
+  
   void Cleanup();
 
   //checking functions

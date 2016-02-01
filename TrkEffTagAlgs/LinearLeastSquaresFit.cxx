@@ -32,8 +32,8 @@ trkeff::LinearLeastSquaresFit::LeastSquaresResult_t
     _sum_x2 += (double)hit_collection[i_h].WireID().Wire * (double)hit_collection[i_h].WireID().Wire;
   }
 
-  result.slope =  (_sum_y*_sum_x2 - _sum_x*_sum_xy)/(_n*_sum_x2 - _sum_x*_sum_x);
-  result.intercept = (_n*_sum_xy - _sum_x*_sum_y)/(_n*_sum_x2 - _sum_x*_sum_x);
+  result.intercept =  (_sum_y*_sum_x2 - _sum_x*_sum_xy)/(_n*_sum_x2 - _sum_x*_sum_x);
+  result.slope     = (_n*_sum_xy - _sum_x*_sum_y)/(_n*_sum_x2 - _sum_x*_sum_x);
 
   result.chi2 = 0;
   double tmp;
