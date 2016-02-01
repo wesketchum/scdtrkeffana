@@ -78,10 +78,10 @@ public:
   void SortHitsBySearchRegion(std::vector<recob::Hit> const&, util::DetectorProperties &);
   void RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> const&,
 				  HitMapByPlane_t & hitmaps);
-  std::vector<size_t> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const&,
-				   geo::GeometryCore const&,
-				   util::DetectorProperties const&,
-				   util::LArProperties const&);
+  std::vector<unsigned int> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const&,
+					 geo::GeometryCore const&,
+					 util::DetectorProperties const&,
+					 util::LArProperties const&);
   void Cleanup();
 
   //checking functions

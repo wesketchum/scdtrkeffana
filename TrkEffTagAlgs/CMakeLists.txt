@@ -2,9 +2,18 @@
 
 cet_find_library( BOOST_SYSTEM NAMES boost_system PATHS ENV BOOST_LIB NO_DEFAULT_PATH )
 
+art_make_library( LIBRARY_NAME  LinearLeastSquaresFit
+	SOURCE LinearLeastSquaresFit.cxx
+	LIBRARIES
+		RecoBase
+                ${CETLIB}
+		${BOOST_SYSTEM} #why the hell do I need this?
+)
+
 art_make_library( LIBRARY_NAME  ub_TrkEffTagAlgs
 	SOURCE TagCreatorAlg.cxx
 	LIBRARIES
+		LinearLeastSquaresFit
 		Geometry
 		RecoBase
 		RecoAlg
