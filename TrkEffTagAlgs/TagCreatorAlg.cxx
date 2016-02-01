@@ -219,7 +219,6 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
       ClusterHits(hit_collection,hit_indices,geom,detprop,larprop);
     }
   }
-
 }
 
 void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection,
@@ -269,10 +268,11 @@ void trkeff::TagCreatorAlg::RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> c
       
     }
   }
-  
+
 }
 
-std::vector<unsigned int> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob::Hit> const& hit_collection, std::vector<size_t> const& hit_index,
+std::vector<unsigned int> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob::Hit> const& hit_collection,
+							      std::vector<size_t> const& hit_index,
 							      geo::GeometryCore        const& geom,
 							      util::DetectorProperties const& detprop,
 							      util::LArProperties      const& larprop){
@@ -285,11 +285,8 @@ std::vector<unsigned int> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob:
   fDBScan.run_cluster();
 
   return fDBScan.fpointId_to_clusterId;
-
+  
 }
-
-
-
 
 
 

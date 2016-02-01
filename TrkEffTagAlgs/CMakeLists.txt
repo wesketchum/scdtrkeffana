@@ -11,7 +11,7 @@ art_make_library( LIBRARY_NAME  LinearLeastSquaresFit
 )
 
 art_make_library( LIBRARY_NAME  ub_TrkEffTagAlgs
-	SOURCE TagCreatorAlg.cxx
+	SOURCE TagCreatorAlg.cxx TrkEffLinearityCheck.cxx
 	LIBRARIES
 		LinearLeastSquaresFit
 		Geometry
