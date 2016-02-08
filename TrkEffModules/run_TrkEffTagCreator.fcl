@@ -1,5 +1,6 @@
 #include "services_microboone.fcl"
 #include "clusteralgorithms.fcl"
+#include "evdservices_microboone.fcl"
 
 process_name : TagCreator
 
@@ -30,6 +31,9 @@ services : {
 	#MemoryPeakReporter: {}
 	#OpDigiProperties:               @local::microboone_opdigiproperties
 
+
+ 	EventDisplay: @local::microboone_evd
+
   message:      @local::standard_info
 
 }
@@ -55,9 +59,11 @@ physics: {
 		  LineMaxChiSquare: 2
 	   	  TimeMatch: 3
 		  MinHitAmplitudes: [ 1 ]
+		  MaxHitWidths:     [ 25 ]
 		  MaxHitAmplitudes: [ 999999 ]
 		  DBScanAlg: @local::standard_dbscanalg
 		  Debug: true
+		  DebugCanvas: true
 		 }
 	       }
   }
