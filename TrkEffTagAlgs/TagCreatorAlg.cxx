@@ -13,14 +13,17 @@
 
 #include "TagCreatorAlg.hh"
 
-//#include "TCanvas.h"
-#include "TGraphErrors.h"
 #include "TF1.h"
+#include "TGraphErrors.h"
 
 trkeff::TagCreatorAlg::TagCreatorAlg()
-{}
+{
+  if(fDebugCanvas)
+    fCanvas = new TCanvas("canvas","Tag Creator Debug Canvas",600,600);
+}
 
-void trkeff::TagCreatorAlg::SetupOutputTree(TTree* tfs_tree){
+void trkeff::TagCreatorAlg::SetupOutputTree(TTree* tfs_tree)
+{
   fTree = tfs_tree;
   fTree->SetObject(fTree->GetName(),"TagCreatorAlg Tree");
 }
@@ -33,11 +36,10 @@ void trkeff::TagCreatorAlg::FillConfigParameters(fhicl::ParameterSet const& p)
   fTimeMatch = p.get< double >("TimeMatch");
   fMinHitAmplitudes = p.get< std::vector<double> >("MinHitAmplitudes");
   fMaxHitAmplitudes = p.get< std::vector<double> >("MaxHitAmplitudes");
+  fMaxHitWidths     = p.get< std::vector<double> >("MaxHitWidths");
   fDBScan.reconfigure(p.get< fhicl::ParameterSet >("DBScanAlg"));
   fDebug = p.get<bool>("Debug",false);
-
-  if(fDebug)
-    fDebugCanvas = p.get<bool>("DebugCanvas",true);
+  fDebugCanvas = p.get<bool>("DebugCanvas",false);
   
 }
 
@@ -68,6 +70,12 @@ void trkeff::TagCreatorAlg::ProcessConfigParameters(geo::GeometryCore const& geo
     throw cet::exception("trkeff::TagCreatorAlg::Configure")
       << "fMinHitAmplitudes must have same size as nplanes =" << geo.Nplanes() << ".\n";
   
+  if(fMaxHitWidths.size()==1)
+    fMaxHitWidths = std::vector<double>(geo.Nplanes(),fMaxHitWidths[0]);
+  if(fMaxHitWidths.size()!=geo.Nplanes())
+    throw cet::exception("trkeff::TagCreatorAlg::Configure")
+      << "fMaxHitWidths must have same size as nplanes =" << geo.Nplanes() << ".\n";
+
   for(size_t i_p=0; i_p<fMaxHitAmplitudes.size(); ++i_p){
     if(fMaxHitAmplitudes[i_p]<fMinHitAmplitudes[i_p])
       throw cet::exception("trkeff::TagCreatorAlg::Configure")
@@ -155,7 +163,7 @@ void trkeff::TagCreatorAlg::PrintSearchRegionsWires(){
 
 }
 
-void trkeff::TagCreatorAlg::PrintHitsBySearchRegion(){
+void trkeff::TagCreatorAlg::PrintHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection){
 
   std::cout << "Wire search regions: " << fSearchRegionsWires.size()
 	    << std::endl
@@ -174,8 +182,11 @@ void trkeff::TagCreatorAlg::PrintHitsBySearchRegion(){
       std::cout << "\tPlane " << i_p << " ["
 		<< fSearchRegionsWires[i_s][i_p][0] << ","
 		<< fSearchRegionsWires[i_s][i_p][1] << "] : " << std::endl;
-      for(auto const& i_h : fSortedHitsIndex[i_s][i_p])
+      for(auto const& i_h : fSortedHitsIndex[i_s][i_p]){
 	std::cout << "\t\tHit: (time,index) = (" << i_h.first << "," << i_h.second << ")" << std::endl;
+	recob::Hit const& hit(hit_collection[i_h.second]);
+	std::cout << "\t\t\t(PeakTime,RMS,Wire) = (" << hit.PeakTime() << "," << hit.RMS() << "," << hit.WireID().Wire << ")" << std::endl;
+      }
     }
        
   }
@@ -196,47 +207,88 @@ void trkeff::TagCreatorAlg::Cleanup(){
 
 }
 
+void trkeff::TagCreatorAlg::DebugCanvas(std::vector<recob::Hit>  const& hit_collection,
+					std::vector<size_t> const& hit_indices,
+					std::string title){
+
+  fCanvas->cd();
+  TGraphErrors graph(hit_indices.size());
+  for(size_t ih=0; ih<hit_indices.size(); ++ih){
+    graph.SetPoint(ih,
+		   hit_collection[hit_indices[ih]].WireID().Wire,
+		   hit_collection[hit_indices[ih]].PeakTime());
+    graph.SetPointError(ih,
+			0.5,
+			hit_collection[hit_indices[ih]].RMS());
+  }
+  title += ";Wire number;Time (ticks)";
+  graph.SetTitle(title.c_str());
+  graph.SetMarkerStyle(7);
+  fCanvas->cd();
+  graph.Draw("AP");
+  fCanvas->Update();
+
+  std::string response;
+  std::cout << "Proceed? " << std::endl;
+  std::cin >> response;
+}
+
+
+void trkeff::TagCreatorAlg::DebugCanvas(std::vector<recob::Hit>  const& hit_collection,
+					std::vector<size_t> const& hit_indices,
+					trkeff::LinearLeastSquaresFit::LeastSquaresResult_t const& result,
+					trkeff::LinearLeastSquaresFit::LeastSquaresResult_t const& result_invert,
+					std::string title){
+
+  fCanvas->cd();
+  TGraphErrors graph(hit_indices.size());
+  for(size_t ih=0; ih<hit_indices.size(); ++ih){
+    graph.SetPoint(ih,
+		   hit_collection[hit_indices[ih]].WireID().Wire,
+		   hit_collection[hit_indices[ih]].PeakTime());
+    graph.SetPointError(ih,
+			0.5,
+			hit_collection[hit_indices[ih]].RMS());
+  }
+  title += ";Wire number;Time (ticks)";
+  graph.SetTitle(title.c_str());
+  fCanvas->cd();
+  graph.Draw("AP");
+  graph.SetMarkerStyle(7);
+  TF1 line("line","pol1",0,4000);
+  line.SetParameters(result.intercept,result.slope);
+  TF1 line_invert("line_invert","pol1",0,1e4);
+  line_invert.SetParameters(-1*result_invert.intercept/result_invert.slope,1./result_invert.slope);
+  line.Draw("sames");
+  line_invert.Draw("sames");
+  fCanvas->Update();
+
+  std::string response;
+  std::cout << "Proceed? " << std::endl;
+  std::cin >> response;
+}
+
 void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_collection,
 					geo::GeometryCore        const& geom,
 					util::DetectorProperties & detprop,
 					util::LArProperties      const& larprop){
+
+  Cleanup();
   
   SortHitsBySearchRegion(hit_collection,detprop);
   if(fDebug) {
     std::cout << "Hits per search region before pruning by time." << std::endl;
-    PrintHitsBySearchRegion();
+    PrintHitsBySearchRegion(hit_collection);
   }
 
   for(auto & sr : fSortedHitsIndex){
 
-    for(auto & hm : sr){
-      std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
-      for(auto const& ih : hm)
-	hit_indices.emplace_back(ih.second);
-      
-      if(fDebugCanvas) {
-	
-	TFile myfile("my_test_file.root","RECREATE");
-	//TCanvas* canvas = new TCanvas("canvas","TestCanvas",600,600);
-	//canvas->cd();
-	TGraphErrors* graph = new TGraphErrors(hit_indices.size());
-	for(size_t ih=0; ih<hit_indices.size(); ++ih){
-	  graph->SetPoint(ih,
-			  hit_collection[hit_indices[ih]].WireID().Wire,
-			  hit_collection[hit_indices[ih]].PeakTime());
-	  graph->SetPointError(ih,
-			       0,
-			       hit_collection[hit_indices[ih]].RMS());
-	}
-	graph->SetName("gr");
-	graph->Draw("A*");
-	graph->Write();
-	myfile.Close();
-	std::string response;
-	std::cout << "Proceed? " << std::endl;
-	std::cin >> response;
-	//delete canvas;
-	delete graph;
+    if(fDebugCanvas) {
+      for(auto const& hm : sr){
+	std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
+	for(auto const& ih : hm)
+	  hit_indices.emplace_back(ih.second);	
+	DebugCanvas(hit_collection,hit_indices,"Hits before pruning");
       }
     }
     
@@ -244,106 +296,46 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
     RemoveHitsWithoutTimeMatch(hit_collection,sr);
     if(fDebug) {
       std::cout << "Hits per search region after pruning by time." << std::endl;
-	PrintHitsBySearchRegion();
+	PrintHitsBySearchRegion(hit_collection);
     }
-    
-    
-    for(auto & hm : sr){
-      std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
-      for(auto const& ih : hm)
-	hit_indices.emplace_back(ih.second);
-      
-      if(fDebugCanvas) {
-	
-	TFile myfile("my_test_file.root","RECREATE");
-	//TCanvas* canvas = new TCanvas("canvas","TestCanvas",600,600);
-	//canvas->cd();
-	TGraphErrors* graph = new TGraphErrors(hit_indices.size());
-	for(size_t ih=0; ih<hit_indices.size(); ++ih){
-	  graph->SetPoint(ih,
-			  hit_collection[hit_indices[ih]].WireID().Wire,
-			  hit_collection[hit_indices[ih]].PeakTime());
-	  graph->SetPointError(ih,
-			       0,
-			       hit_collection[hit_indices[ih]].RMS());
-	}
-	graph->SetName("gr");
-	graph->Draw("A*");
-	graph->Write();
-	myfile.Close();
-	std::string response;
-	std::cout << "Proceed? " << std::endl;
-	std::cin >> response;
-	//delete canvas;
-	delete graph;
+    if(fDebugCanvas) {
+      for(auto const& hm : sr){
+	std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
+	for(auto const& ih : hm)
+	  hit_indices.emplace_back(ih.second);	
+	DebugCanvas(hit_collection,hit_indices,"Hits after pruning");
       }
-      
-    } 
+    }
   }
-
-
   
   for(auto & sr : fSortedHitsIndex){
     for(auto & hm : sr){
       
-
-      std::cout << "NEW PLANE REGION!" << std::endl;
+      if(fDebug)
+	std::cout << "NEW PLANE REGION!" << std::endl;
 
       while(1){
 
-      //create temp vector ...
-      std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
-      for(auto const& ih : hm)
-	hit_indices.emplace_back(ih.second);
-      //ClusterHits(hit_collection,hit_indices,geom,detprop,larprop);
-      auto result = RawLeastSquaresFit(hit_collection,hit_indices);
-      auto result_invert = RawLeastSquaresFit(hit_collection,hit_indices,true);
-
-      if(fDebugCanvas) {
+	//create temp vector ...
+	std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
+	for(auto const& ih : hm)
+	  hit_indices.emplace_back(ih.second);
 	
-	TFile myfile("my_test_file.root","RECREATE");
-	std::cout << "Made it here..." << std::endl;
-	//TCanvas* canvas = new TCanvas("canvas","TestCanvas",600,600);
-	//canvas->cd();
-	TGraphErrors* graph = new TGraphErrors(hit_indices.size());
-	for(size_t ih=0; ih<hit_indices.size(); ++ih){
-	  graph->SetPoint(ih,
-			 hit_collection[hit_indices[ih]].WireID().Wire,
-			 hit_collection[hit_indices[ih]].PeakTime());
-	  graph->SetPointError(ih,
-			       0,
-			       hit_collection[hit_indices[ih]].RMS());
-	}
-	graph->SetName("gr");
-	graph->Draw("A*");
-	TF1 line("line","pol1",
-		 0,
-		 4000);
-	line.SetParameters(result.intercept,result.slope);
-	TF1 line_invert("line_invert","pol1",
-		 0,
-		 1e4);
-	line_invert.SetParameters(-1*result_invert.intercept/result_invert.slope,1./result_invert.slope);
-	//std::cout << "Made it here too..." << std::endl;
-	//canvas->Update();
-	//std::cout << "Made it here three..." << std::endl;
-	//canvas->Draw();
-	graph->Write();
-	line.Write();
-	line_invert.Write();
-	myfile.Close();
-	std::string response;
-	std::cout << "Proceed? " << std::endl;
-	std::cin >> response;
-	//delete canvas;
-	delete graph;
-      }
-
-      if(result.chi2/result.npts < fLineMaxChiSquare)
-	break;
-      
-      RemoveHitsBadMatch(hit_collection,hm,result,result_invert);
-      
+	//Here is the clustering call...
+	//ClusterHits(hit_collection,hit_indices,geom,detprop,larprop);
+	
+	//or could do least squares fits
+	auto result = RawLeastSquaresFit(hit_collection,hit_indices);
+	auto result_invert = RawLeastSquaresFit(hit_collection,hit_indices,true);
+	
+	if(fDebugCanvas)
+	  DebugCanvas(hit_collection,hit_indices,result,result_invert,"Least squares fit");
+	
+	if(result.chi2/result.npts < fLineMaxChiSquare)
+	  break;
+	
+	RemoveHitsBadMatch(hit_collection,hm,result,result_invert);
+	
       }
     }
   }

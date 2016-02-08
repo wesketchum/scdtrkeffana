@@ -9,6 +9,7 @@
 #include "fhiclcpp/ParameterSet.h"
 
 #include "TTree.h"
+#include "TCanvas.h"
 
 //#include "RecoBase/Hit.h"
 #include "RecoAlg/DBScanAlg.h"
@@ -39,7 +40,7 @@ public:
 		   util::LArProperties      const& );
   
   /// Default destructor
-  virtual ~TagCreatorAlg(){};
+  virtual ~TagCreatorAlg(){ delete fCanvas; };
 
   void SetupOutputTree(TTree*);
   
@@ -52,6 +53,7 @@ public:
   double                             fTimeMatch;             // time matching condition for hits across planes
   std::vector< double >              fMinHitAmplitudes;      // min hit amplitudes per plane in combination
   std::vector< double >              fMaxHitAmplitudes;      // max hit ampltidues per plane in combination
+  std::vector< double >              fMaxHitWidths;          // max hit rms per plane in combination
   bool                               fDebug; //run functions for debugging
   bool                               fDebugCanvas; //run functions for debugging
 
@@ -92,14 +94,24 @@ public:
 			  LinearLeastSquaresFit::LeastSquaresResult_t const&,
 			  LinearLeastSquaresFit::LeastSquaresResult_t const&);
   
+  void DebugCanvas(std::vector<recob::Hit>  const&,
+		   std::vector<size_t> const&,
+		   std::string title="");
+  void DebugCanvas(std::vector<recob::Hit>  const&,
+		   std::vector<size_t> const&,
+		   LinearLeastSquaresFit::LeastSquaresResult_t const&,
+		   LinearLeastSquaresFit::LeastSquaresResult_t const&,
+		   std::string title="");
+
   void Cleanup();
 
   //checking functions
   void PrintSearchRegionsWires();
-  void PrintHitsBySearchRegion();
+  void PrintHitsBySearchRegion(std::vector<recob::Hit> const&);
 
   
   TTree*      fTree;
+  TCanvas*    fCanvas;
   
 };
 

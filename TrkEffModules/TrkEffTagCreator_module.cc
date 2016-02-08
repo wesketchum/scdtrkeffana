@@ -17,6 +17,8 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+#include "art/Framework/Services/Optional/TFileService.h"
+
 #include <memory>
 
 #include "RecoBase/Hit.h"
@@ -63,10 +65,16 @@ trkeff::TrkEffTagCreator::TrkEffTagCreator(fhicl::ParameterSet const & p)
 {
   //produces< std::vector<trkeff::TrkEffTag> >();
   this->reconfigure(p);
+  /*
+  art::ServiceHandle<art::TFileService> tfs;
+  fTagCreator.SetDisplayCanvas(tfs->make<TCanvas>("canvas","DisplayCanvas",600,600),
+			       tfs->make<TGraphErrors>());
+  */
 }
 
 void trkeff::TrkEffTagCreator::produce(art::Event & e)
 {
+
   art::Handle< std::vector<recob::Hit> > hitHandle;
   e.getByLabel(fHitCollectionLabel,hitHandle);
 
