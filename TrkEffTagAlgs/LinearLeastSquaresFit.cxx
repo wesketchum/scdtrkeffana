@@ -17,7 +17,8 @@ void trkeff::LinearLeastSquaresFit::Clear(){
 
 trkeff::LinearLeastSquaresFit::LeastSquaresResult_t
  trkeff::LinearLeastSquaresFit::LinearFit(std::vector<recob::Hit> const& hit_collection,
-					  std::vector<size_t> const& hit_indices)
+					  std::vector<size_t> const& hit_indices,
+					  bool invert)
  {
 
   LeastSquaresResult_t result;
@@ -26,10 +27,17 @@ trkeff::LinearLeastSquaresFit::LeastSquaresResult_t
   Clear();  
   for(auto const& i_h : hit_indices){
     _n      += 1.0;
-    _sum_x  += (double)hit_collection[i_h].WireID().Wire;
-    _sum_y  += hit_collection[i_h].PeakTime(); //detprop?
+    if(!invert){
+      _sum_x  += (double)hit_collection[i_h].WireID().Wire;
+      _sum_y  += hit_collection[i_h].PeakTime(); //detprop?
+      _sum_x2 += (double)hit_collection[i_h].WireID().Wire * (double)hit_collection[i_h].WireID().Wire;
+    }
+    else{
+      _sum_y  += (double)hit_collection[i_h].WireID().Wire;
+      _sum_x  += hit_collection[i_h].PeakTime(); //detprop?
+      _sum_x2 += (double)hit_collection[i_h].PeakTime() * (double)hit_collection[i_h].PeakTime();
+    }
     _sum_xy += (double)hit_collection[i_h].WireID().Wire * hit_collection[i_h].PeakTime();
-    _sum_x2 += (double)hit_collection[i_h].WireID().Wire * (double)hit_collection[i_h].WireID().Wire;
   }
 
   result.intercept =  (_sum_y*_sum_x2 - _sum_x*_sum_xy)/(_n*_sum_x2 - _sum_x*_sum_x);
@@ -39,9 +47,16 @@ trkeff::LinearLeastSquaresFit::LeastSquaresResult_t
   result.npts = hit_indices.size();
   double tmp;
   for(auto const& i_h : hit_indices){
-    tmp = result.slope*(double)hit_collection[i_h].WireID().Wire + result.intercept;
-    result.chi2 += (hit_collection[i_h].PeakTime() - tmp)*(hit_collection[i_h].PeakTime() - tmp) /
-      (hit_collection[i_h].RMS()*hit_collection[i_h].RMS());
+    if(!invert){
+      tmp = result.slope*(double)hit_collection[i_h].WireID().Wire + result.intercept;
+      result.chi2 += (hit_collection[i_h].PeakTime() - tmp)*(hit_collection[i_h].PeakTime() - tmp) /
+	(hit_collection[i_h].RMS()*hit_collection[i_h].RMS());
+    }
+    else{
+      tmp = result.slope*(double)hit_collection[i_h].PeakTime() + result.intercept;
+      result.chi2 += ((double)hit_collection[i_h].WireID().Wire - tmp)*((double)hit_collection[i_h].WireID().Wire - tmp) /
+      (0.5*0.5);
+    }
   }
 
   result.bad_result = false;

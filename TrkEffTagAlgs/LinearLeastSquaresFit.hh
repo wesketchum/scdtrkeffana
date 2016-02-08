@@ -27,7 +27,7 @@ public:
 
   void Clear();
 
-  LeastSquaresResult_t LinearFit(std::vector<recob::Hit> const&,std::vector<std::size_t> const&);
+  LeastSquaresResult_t LinearFit(std::vector<recob::Hit> const&,std::vector<std::size_t> const&,bool invert=false);
   
   /// Default destructor
   virtual ~LinearLeastSquaresFit(){};

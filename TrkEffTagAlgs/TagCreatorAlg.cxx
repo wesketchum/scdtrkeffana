@@ -208,11 +208,77 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
   }
 
   for(auto & sr : fSortedHitsIndex){
+
+    for(auto & hm : sr){
+      std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
+      for(auto const& ih : hm)
+	hit_indices.emplace_back(ih.second);
+      
+      if(fDebugCanvas) {
+	
+	TFile myfile("my_test_file.root","RECREATE");
+	//TCanvas* canvas = new TCanvas("canvas","TestCanvas",600,600);
+	//canvas->cd();
+	TGraphErrors* graph = new TGraphErrors(hit_indices.size());
+	for(size_t ih=0; ih<hit_indices.size(); ++ih){
+	  graph->SetPoint(ih,
+			  hit_collection[hit_indices[ih]].WireID().Wire,
+			  hit_collection[hit_indices[ih]].PeakTime());
+	  graph->SetPointError(ih,
+			       0,
+			       hit_collection[hit_indices[ih]].RMS());
+	}
+	graph->SetName("gr");
+	graph->Draw("A*");
+	graph->Write();
+	myfile.Close();
+	std::string response;
+	std::cout << "Proceed? " << std::endl;
+	std::cin >> response;
+	//delete canvas;
+	delete graph;
+      }
+    }
+    
+    
     RemoveHitsWithoutTimeMatch(hit_collection,sr);
     if(fDebug) {
       std::cout << "Hits per search region after pruning by time." << std::endl;
-      PrintHitsBySearchRegion();
+	PrintHitsBySearchRegion();
     }
+    
+    
+    for(auto & hm : sr){
+      std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
+      for(auto const& ih : hm)
+	hit_indices.emplace_back(ih.second);
+      
+      if(fDebugCanvas) {
+	
+	TFile myfile("my_test_file.root","RECREATE");
+	//TCanvas* canvas = new TCanvas("canvas","TestCanvas",600,600);
+	//canvas->cd();
+	TGraphErrors* graph = new TGraphErrors(hit_indices.size());
+	for(size_t ih=0; ih<hit_indices.size(); ++ih){
+	  graph->SetPoint(ih,
+			  hit_collection[hit_indices[ih]].WireID().Wire,
+			  hit_collection[hit_indices[ih]].PeakTime());
+	  graph->SetPointError(ih,
+			       0,
+			       hit_collection[hit_indices[ih]].RMS());
+	}
+	graph->SetName("gr");
+	graph->Draw("A*");
+	graph->Write();
+	myfile.Close();
+	std::string response;
+	std::cout << "Proceed? " << std::endl;
+	std::cin >> response;
+	//delete canvas;
+	delete graph;
+      }
+      
+    } 
   }
 
 
@@ -220,6 +286,8 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
   for(auto & sr : fSortedHitsIndex){
     for(auto & hm : sr){
       
+
+      std::cout << "NEW PLANE REGION!" << std::endl;
 
       while(1){
 
@@ -229,6 +297,7 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
 	hit_indices.emplace_back(ih.second);
       //ClusterHits(hit_collection,hit_indices,geom,detprop,larprop);
       auto result = RawLeastSquaresFit(hit_collection,hit_indices);
+      auto result_invert = RawLeastSquaresFit(hit_collection,hit_indices,true);
 
       if(fDebugCanvas) {
 	
@@ -251,12 +320,17 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
 		 0,
 		 4000);
 	line.SetParameters(result.intercept,result.slope);
+	TF1 line_invert("line_invert","pol1",
+		 0,
+		 1e4);
+	line_invert.SetParameters(-1*result_invert.intercept/result_invert.slope,1./result_invert.slope);
 	//std::cout << "Made it here too..." << std::endl;
 	//canvas->Update();
 	//std::cout << "Made it here three..." << std::endl;
 	//canvas->Draw();
 	graph->Write();
 	line.Write();
+	line_invert.Write();
 	myfile.Close();
 	std::string response;
 	std::cout << "Proceed? " << std::endl;
@@ -265,7 +339,10 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
 	delete graph;
       }
 
-      RemoveHitsBadMatch(hit_collection,hm,result);
+      if(result.chi2/result.npts < fLineMaxChiSquare)
+	break;
+      
+      RemoveHitsBadMatch(hit_collection,hm,result,result_invert);
       
       }
     }
@@ -341,35 +418,60 @@ std::vector<unsigned int> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob:
 
 trkeff::LinearLeastSquaresFit::LeastSquaresResult_t
 trkeff::TagCreatorAlg::RawLeastSquaresFit(std::vector<recob::Hit> const& hit_collection,
-					  std::vector<size_t> const& hit_index)
+					  std::vector<size_t> const& hit_index,
+					  bool invert)
 {
   fLSqFit.Clear();
-  auto result = fLSqFit.LinearFit(hit_collection,hit_index);
-  if(fDebug)
-    std::cout << "\t\tLeastSquares result: time = " << result.slope
-	      << " * wire + " << result.intercept
-	      << "\tchi2=" << result.chi2 << " / " << result.npts << std::endl;
-
+  auto result = fLSqFit.LinearFit(hit_collection,hit_index,invert);
+  if(fDebug){
+    if(!invert){
+      std::cout << "\t\tLeastSquares result: time = " << result.slope
+		<< " * wire + " << result.intercept
+		<< "\tchi2=" << result.chi2 << " / " << result.npts << std::endl;
+    }
+    else{
+      std::cout << "\t\tLeastSquares result: wire = " << result.slope
+		<< " * time + " << result.intercept
+		<< "\tchi2=" << result.chi2 << " / " << result.npts << std::endl;
+    }
+  }
   return result;
 }
 
 void trkeff::TagCreatorAlg::RemoveHitsBadMatch(std::vector<recob::Hit> const& hit_collection,
 					       HitMap_t & hitmap,
-					       trkeff::LinearLeastSquaresFit::LeastSquaresResult_t const& lsq_result){
+					       trkeff::LinearLeastSquaresFit::LeastSquaresResult_t const& lsq_result,
+					       trkeff::LinearLeastSquaresFit::LeastSquaresResult_t const& lsq_result_invert){
 
   double max_diff=0;
+  double max_diff_invert=0;
   double line_value=0;
+  double line_value_invert=0;
   auto max_iter = hitmap.begin();
+  auto max_iter_invert = hitmap.begin();
   for(auto ih=hitmap.begin(); ih!=hitmap.end(); ++ih){
+
     line_value = hit_collection[ih->second].WireID().Wire*lsq_result.slope + lsq_result.intercept;
     if(max_diff < std::abs(hit_collection[ih->second].PeakTime()-line_value)){
       max_diff = std::abs(hit_collection[ih->second].PeakTime()-line_value);
       max_iter = ih;
     }
+
+    line_value_invert = hit_collection[ih->second].PeakTime()*lsq_result_invert.slope + lsq_result_invert.intercept;
+    if(max_diff_invert < std::abs((double)hit_collection[ih->second].WireID().Wire-line_value_invert)){
+      max_diff_invert = std::abs((double)hit_collection[ih->second].WireID().Wire-line_value_invert);
+      max_iter_invert = ih;
+    }
+
   }
 
-  hitmap.erase(max_iter);
-
+  if(max_iter!=max_iter_invert){
+    hitmap.erase(max_iter);
+    hitmap.erase(max_iter_invert);
+  }
+  else
+    hitmap.erase(max_iter);
+    
 }
 
 #endif

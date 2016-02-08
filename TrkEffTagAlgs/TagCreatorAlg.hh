@@ -86,9 +86,10 @@ public:
 					 util::DetectorProperties const&,
 					 util::LArProperties const&);
   LinearLeastSquaresFit::LeastSquaresResult_t
-  RawLeastSquaresFit(std::vector<recob::Hit> const&, std::vector<size_t> const&);
+  RawLeastSquaresFit(std::vector<recob::Hit> const&, std::vector<size_t> const&, bool invert=false);
   void RemoveHitsBadMatch(std::vector<recob::Hit> const&,
 			  HitMap_t &,
+			  LinearLeastSquaresFit::LeastSquaresResult_t const&,
 			  LinearLeastSquaresFit::LeastSquaresResult_t const&);
   
   void Cleanup();
