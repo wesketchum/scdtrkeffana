@@ -21,6 +21,7 @@ art_make_library( LIBRARY_NAME  ub_TrkEffTagAlgs
 		DetectorProperties_service
 		${FHICLCPP}
                 ${ROOT_BASIC_LIB_LIST}
+#                ${ROOT_LIBS}
                 ${CETLIB}
 		${BOOST_SYSTEM} #why the hell do I need this?
 )

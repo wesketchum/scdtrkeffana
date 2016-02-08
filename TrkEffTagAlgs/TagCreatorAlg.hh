@@ -53,6 +53,7 @@ public:
   std::vector< double >              fMinHitAmplitudes;      // min hit amplitudes per plane in combination
   std::vector< double >              fMaxHitAmplitudes;      // max hit ampltidues per plane in combination
   bool                               fDebug; //run functions for debugging
+  bool                               fDebugCanvas; //run functions for debugging
 
 
   typedef std::array<geo::WireID,2> WireIDRegion_t;
@@ -84,7 +85,11 @@ public:
 					 geo::GeometryCore const&,
 					 util::DetectorProperties const&,
 					 util::LArProperties const&);
-  void RawLeastSquaresFit(std::vector<recob::Hit> const&, std::vector<size_t> const&);
+  LinearLeastSquaresFit::LeastSquaresResult_t
+  RawLeastSquaresFit(std::vector<recob::Hit> const&, std::vector<size_t> const&);
+  void RemoveHitsBadMatch(std::vector<recob::Hit> const&,
+			  HitMap_t &,
+			  LinearLeastSquaresFit::LeastSquaresResult_t const&);
   
   void Cleanup();
 

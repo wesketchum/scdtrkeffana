@@ -36,10 +36,12 @@ trkeff::LinearLeastSquaresFit::LeastSquaresResult_t
   result.slope     = (_n*_sum_xy - _sum_x*_sum_y)/(_n*_sum_x2 - _sum_x*_sum_x);
 
   result.chi2 = 0;
+  result.npts = hit_indices.size();
   double tmp;
   for(auto const& i_h : hit_indices){
     tmp = result.slope*(double)hit_collection[i_h].WireID().Wire + result.intercept;
-    result.chi2 += (hit_collection[i_h].PeakTime() - tmp)*(hit_collection[i_h].PeakTime() - tmp)/tmp;
+    result.chi2 += (hit_collection[i_h].PeakTime() - tmp)*(hit_collection[i_h].PeakTime() - tmp) /
+      (hit_collection[i_h].RMS()*hit_collection[i_h].RMS());
   }
 
   result.bad_result = false;

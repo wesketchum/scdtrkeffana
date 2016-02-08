@@ -13,6 +13,9 @@
 
 #include "TagCreatorAlg.hh"
 
+//#include "TCanvas.h"
+#include "TGraphErrors.h"
+#include "TF1.h"
 
 trkeff::TagCreatorAlg::TagCreatorAlg()
 {}
@@ -32,6 +35,10 @@ void trkeff::TagCreatorAlg::FillConfigParameters(fhicl::ParameterSet const& p)
   fMaxHitAmplitudes = p.get< std::vector<double> >("MaxHitAmplitudes");
   fDBScan.reconfigure(p.get< fhicl::ParameterSet >("DBScanAlg"));
   fDebug = p.get<bool>("Debug",false);
+
+  if(fDebug)
+    fDebugCanvas = p.get<bool>("DebugCanvas",true);
+  
 }
 
 void trkeff::TagCreatorAlg::ProcessConfigParameters(geo::GeometryCore const& geo){
@@ -208,16 +215,59 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
     }
   }
 
+
   
-  for(auto const& sr : fSortedHitsIndex){
-    for(auto const& hm : sr){
+  for(auto & sr : fSortedHitsIndex){
+    for(auto & hm : sr){
       
+
+      while(1){
+
       //create temp vector ...
       std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
       for(auto const& ih : hm)
 	hit_indices.emplace_back(ih.second);
-      ClusterHits(hit_collection,hit_indices,geom,detprop,larprop);
-      RawLeastSquaresFit(hit_collection,hit_indices);
+      //ClusterHits(hit_collection,hit_indices,geom,detprop,larprop);
+      auto result = RawLeastSquaresFit(hit_collection,hit_indices);
+
+      if(fDebugCanvas) {
+	
+	TFile myfile("my_test_file.root","RECREATE");
+	std::cout << "Made it here..." << std::endl;
+	//TCanvas* canvas = new TCanvas("canvas","TestCanvas",600,600);
+	//canvas->cd();
+	TGraphErrors* graph = new TGraphErrors(hit_indices.size());
+	for(size_t ih=0; ih<hit_indices.size(); ++ih){
+	  graph->SetPoint(ih,
+			 hit_collection[hit_indices[ih]].WireID().Wire,
+			 hit_collection[hit_indices[ih]].PeakTime());
+	  graph->SetPointError(ih,
+			       0,
+			       hit_collection[hit_indices[ih]].RMS());
+	}
+	graph->SetName("gr");
+	graph->Draw("A*");
+	TF1 line("line","pol1",
+		 0,
+		 4000);
+	line.SetParameters(result.intercept,result.slope);
+	//std::cout << "Made it here too..." << std::endl;
+	//canvas->Update();
+	//std::cout << "Made it here three..." << std::endl;
+	//canvas->Draw();
+	graph->Write();
+	line.Write();
+	myfile.Close();
+	std::string response;
+	std::cout << "Proceed? " << std::endl;
+	std::cin >> response;
+	//delete canvas;
+	delete graph;
+      }
+
+      RemoveHitsBadMatch(hit_collection,hm,result);
+      
+      }
     }
   }
 }
@@ -289,17 +339,37 @@ std::vector<unsigned int> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob:
   
 }
 
-void trkeff::TagCreatorAlg::RawLeastSquaresFit(std::vector<recob::Hit> const& hit_collection,
-					       std::vector<size_t> const& hit_index)
+trkeff::LinearLeastSquaresFit::LeastSquaresResult_t
+trkeff::TagCreatorAlg::RawLeastSquaresFit(std::vector<recob::Hit> const& hit_collection,
+					  std::vector<size_t> const& hit_index)
 {
   fLSqFit.Clear();
   auto result = fLSqFit.LinearFit(hit_collection,hit_index);
   if(fDebug)
     std::cout << "\t\tLeastSquares result: time = " << result.slope
 	      << " * wire + " << result.intercept
-	      << "\tchi2=" << result.chi2 << std::endl;
-  
+	      << "\tchi2=" << result.chi2 << " / " << result.npts << std::endl;
+
+  return result;
 }
 
+void trkeff::TagCreatorAlg::RemoveHitsBadMatch(std::vector<recob::Hit> const& hit_collection,
+					       HitMap_t & hitmap,
+					       trkeff::LinearLeastSquaresFit::LeastSquaresResult_t const& lsq_result){
+
+  double max_diff=0;
+  double line_value=0;
+  auto max_iter = hitmap.begin();
+  for(auto ih=hitmap.begin(); ih!=hitmap.end(); ++ih){
+    line_value = hit_collection[ih->second].WireID().Wire*lsq_result.slope + lsq_result.intercept;
+    if(max_diff < std::abs(hit_collection[ih->second].PeakTime()-line_value)){
+      max_diff = std::abs(hit_collection[ih->second].PeakTime()-line_value);
+      max_iter = ih;
+    }
+  }
+
+  hitmap.erase(max_iter);
+
+}
 
 #endif

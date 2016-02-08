@@ -17,8 +17,9 @@ public:
     double slope;
     double intercept;
     double chi2;
+    unsigned int npts;
     bool   bad_result;
-    LeastSquaresResult():slope(0),intercept(0),chi2(-999),bad_result(true){}
+    LeastSquaresResult():slope(0),intercept(0),chi2(-999),npts(0),bad_result(true){}
   } LeastSquaresResult_t;
   
   /// Default constructor
