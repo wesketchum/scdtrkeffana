@@ -18,8 +18,9 @@
 
 trkeff::TagCreatorAlg::TagCreatorAlg()
 {
-  if(fDebugCanvas)
+  if(fDebugCanvas){
     fCanvas = new TCanvas("canvas","Tag Creator Debug Canvas",600,600);
+  }
 }
 
 void trkeff::TagCreatorAlg::SetupOutputTree(TTree* tfs_tree)
@@ -273,7 +274,12 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
 					util::DetectorProperties & detprop,
 					util::LArProperties      const& larprop){
 
+  if(fDebug) std::cout << "In CreateTags..." << std::endl;
+
   Cleanup();
+
+  if(fDebug) std::cout << "\tCleanup finished..." << std::endl;
+
   
   SortHitsBySearchRegion(hit_collection,detprop);
   if(fDebug) {
@@ -281,19 +287,27 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
     PrintHitsBySearchRegion(hit_collection);
   }
 
+
   for(auto & sr : fSortedHitsIndex){
 
     if(fDebugCanvas) {
+      if(fDebug) std::cout << "\tPlotting hits in search region..." << std::endl;
       for(auto const& hm : sr){
+	if(fDebug) std::cout << "\tHits size is " << hm.size() << std::endl;
+	
 	std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
 	for(auto const& ih : hm)
 	  hit_indices.emplace_back(ih.second);	
+
+	if(fDebug) std::cout << "\tCalling plotter..." << std::endl;
 	DebugCanvas(hit_collection,hit_indices,"Hits before pruning");
       }
     }
     
     
-    RemoveHitsWithoutTimeMatch(hit_collection,sr);
+    if(fDebug) std::cout << "\tPruning hits..." << std::endl;
+
+  RemoveHitsWithoutTimeMatch(hit_collection,sr);
     if(fDebug) {
       std::cout << "Hits per search region after pruning by time." << std::endl;
 	PrintHitsBySearchRegion(hit_collection);
@@ -343,7 +357,7 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
 
 void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection,
 						   util::DetectorProperties & detprop){
-
+  
   for(size_t i_h=0; i_h<hit_collection.size(); i_h++){
     
     size_t i_p = hit_collection[i_h].WireID().planeID().Plane;
