@@ -63,13 +63,8 @@ trkeff::TrkEffTagCreator::TrkEffTagCreator(fhicl::ParameterSet const & p)
 // :
 // Initialize member data here.
 {
-  //produces< std::vector<trkeff::TrkEffTag> >();
+  produces< std::vector<trkeff::TrkEffTag> >();
   this->reconfigure(p);
-  /*
-  art::ServiceHandle<art::TFileService> tfs;
-  fTagCreator.SetDisplayCanvas(tfs->make<TCanvas>("canvas","DisplayCanvas",600,600),
-			       tfs->make<TGraphErrors>());
-  */
 }
 
 void trkeff::TrkEffTagCreator::produce(art::Event & e)
@@ -78,14 +73,19 @@ void trkeff::TrkEffTagCreator::produce(art::Event & e)
   art::Handle< std::vector<recob::Hit> > hitHandle;
   e.getByLabel(fHitCollectionLabel,hitHandle);
 
+  std::unique_ptr< std::vector<trkeff::TrkEffTag> > tagHandle(new std::vector<trkeff::TrkEffTag>);
+  
   art::ServiceHandle<geo::Geometry> geoHandle;
   art::ServiceHandle<util::DetectorProperties> detpHandle;
   art::ServiceHandle<util::LArProperties> larpHandle;
 
   fTagCreator.CreateTags(*hitHandle,
+			 *tagHandle,
 			 *geoHandle,
 			 *detpHandle,
 			 *larpHandle);
+
+  e.put(std::move(tagHandle));
   
 }
 

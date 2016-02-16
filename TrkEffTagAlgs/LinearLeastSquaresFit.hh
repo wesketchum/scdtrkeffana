@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "SimpleTypesAndConstants/geo_types.h"
+
 namespace recob{ class Hit; }
 
 namespace trkeff{
@@ -18,6 +20,12 @@ public:
     double intercept;
     double chi2;
     unsigned int npts;
+    std::size_t max_outlier_index;
+    double max_outlier_value;
+
+    geo::WireID min_wire;
+    geo::WireID max_wire;
+    
     bool   bad_result;
     LeastSquaresResult():slope(0),intercept(0),chi2(-999),npts(0),bad_result(true){}
   } LeastSquaresResult_t;

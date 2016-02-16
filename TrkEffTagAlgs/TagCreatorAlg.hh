@@ -23,6 +23,7 @@ namespace util{ class DetectorProperties; }
 
 namespace trkeff{
   class TagCreatorAlg;
+  class TrkEffTag;
 }
 
 class trkeff::TagCreatorAlg{
@@ -35,7 +36,8 @@ public:
   void Configure( fhicl::ParameterSet const&, geo::GeometryCore const& );
 
   void CreateTags( std::vector<recob::Hit>  const&,
-		   geo::GeometryCore        const&,
+		   std::vector<TrkEffTag>   &,
+		   geo::GeometryCore        &,
 		   util::DetectorProperties &,
 		   util::LArProperties      const& );
   
@@ -64,6 +66,7 @@ public:
   typedef std::map<float,size_t> HitMap_t;
   typedef std::vector<HitMap_t> HitMapByPlane_t;
 
+  typedef LinearLeastSquaresFit::LeastSquaresResult_t LeastSquaresResult_t;
   
   //internal data
   std::vector<WireIDRegionByPlane_t> fSearchRegionsWires; //per search region, per plane, [start,end]
@@ -87,20 +90,25 @@ public:
 					 geo::GeometryCore const&,
 					 util::DetectorProperties const&,
 					 util::LArProperties const&);
-  LinearLeastSquaresFit::LeastSquaresResult_t
+  LeastSquaresResult_t
   RawLeastSquaresFit(std::vector<recob::Hit> const&, std::vector<size_t> const&, bool invert=false);
-  void RemoveHitsBadMatch(std::vector<recob::Hit> const&,
-			  HitMap_t &,
-			  LinearLeastSquaresFit::LeastSquaresResult_t const&,
-			  LinearLeastSquaresFit::LeastSquaresResult_t const&);
+  void RemoveHitsBadMatch(HitMap_t &,
+			  LeastSquaresResult_t const&,
+			  LeastSquaresResult_t const&);
+
+  bool CreateTagObject(std::vector<LeastSquaresResult_t> const&,
+		       geo::GeometryCore &,
+		       util::DetectorProperties &,
+		       std::vector<TrkEffTag> &);
+
   
   void DebugCanvas(std::vector<recob::Hit>  const&,
 		   std::vector<size_t> const&,
 		   std::string title="");
   void DebugCanvas(std::vector<recob::Hit>  const&,
 		   std::vector<size_t> const&,
-		   LinearLeastSquaresFit::LeastSquaresResult_t const&,
-		   LinearLeastSquaresFit::LeastSquaresResult_t const&,
+		   LeastSquaresResult_t const&,
+		   LeastSquaresResult_t const&,
 		   std::string title="");
 
   void Cleanup();

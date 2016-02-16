@@ -4,7 +4,7 @@
 #include "LinearLeastSquaresFit.hh"
 
 #include "RecoBase/Hit.h"
-#include "SimpleTypesAndConstants/geo_types.h"
+#include <limits>
 
 void trkeff::LinearLeastSquaresFit::Clear(){
   _sum_x  = 0;
@@ -45,20 +45,38 @@ trkeff::LinearLeastSquaresFit::LeastSquaresResult_t
 
   result.chi2 = 0;
   result.npts = hit_indices.size();
-  double tmp;
+  result.max_outlier_value = 0;
+
+  double min_time = std::numeric_limits<double>::max();
+  double max_time = std::numeric_limits<double>::min();
+  double tmp,diff;
   for(auto const& i_h : hit_indices){
+
+    if(hit_collection[i_h].PeakTime() < min_time){
+      min_time = hit_collection[i_h].PeakTime();
+      result.min_wire = hit_collection[i_h].WireID();      
+    }
+    if(hit_collection[i_h].PeakTime() > max_time){
+      max_time = hit_collection[i_h].PeakTime();
+      result.max_wire = hit_collection[i_h].WireID();      
+    }
+    
     if(!invert){
-      tmp = result.slope*(double)hit_collection[i_h].WireID().Wire + result.intercept;
-      result.chi2 += (hit_collection[i_h].PeakTime() - tmp)*(hit_collection[i_h].PeakTime() - tmp) /
-	(hit_collection[i_h].RMS()*hit_collection[i_h].RMS());
+      tmp = result.slope*(double)(hit_collection[i_h].WireID().Wire) + result.intercept;
+      diff = (hit_collection[i_h].PeakTime() - tmp) / hit_collection[i_h].RMS();
     }
     else{
       tmp = result.slope*(double)hit_collection[i_h].PeakTime() + result.intercept;
-      result.chi2 += ((double)hit_collection[i_h].WireID().Wire - tmp)*((double)hit_collection[i_h].WireID().Wire - tmp) /
-      (0.5*0.5);
+      diff = (double)(hit_collection[i_h].WireID().Wire - tmp) / 0.5;
+    }
+    result.chi2 += diff*diff;
+    
+    if( std::abs(diff) > std::abs(result.max_outlier_value) ){
+      result.max_outlier_value = diff;
+      result.max_outlier_index = i_h;
     }
   }
-
+  
   result.bad_result = false;
   return result;
   

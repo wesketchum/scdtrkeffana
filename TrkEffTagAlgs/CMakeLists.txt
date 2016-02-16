@@ -19,6 +19,7 @@ art_make_library( LIBRARY_NAME  ub_TrkEffTagAlgs
 		RecoAlg
 		#Utilities
 		DetectorProperties_service
+		TrkEffTagObjects
 		${FHICLCPP}
                 ${ROOT_BASIC_LIB_LIST}
 #                ${ROOT_LIBS}

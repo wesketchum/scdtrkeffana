@@ -12,6 +12,7 @@
 #include "Utilities/DetectorProperties.h"
 
 #include "TagCreatorAlg.hh"
+#include "TrkEffTagObjects/TrkEffTag.h"
 
 #include "TF1.h"
 #include "TGraphErrors.h"
@@ -237,8 +238,8 @@ void trkeff::TagCreatorAlg::DebugCanvas(std::vector<recob::Hit>  const& hit_coll
 
 void trkeff::TagCreatorAlg::DebugCanvas(std::vector<recob::Hit>  const& hit_collection,
 					std::vector<size_t> const& hit_indices,
-					trkeff::LinearLeastSquaresFit::LeastSquaresResult_t const& result,
-					trkeff::LinearLeastSquaresFit::LeastSquaresResult_t const& result_invert,
+					LeastSquaresResult_t const& result,
+					LeastSquaresResult_t const& result_invert,
 					std::string title){
 
   fCanvas->cd();
@@ -270,7 +271,8 @@ void trkeff::TagCreatorAlg::DebugCanvas(std::vector<recob::Hit>  const& hit_coll
 }
 
 void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_collection,
-					geo::GeometryCore        const& geom,
+					std::vector<TrkEffTag>   & tag_collection,
+					geo::GeometryCore        & geom,
 					util::DetectorProperties & detprop,
 					util::LArProperties      const& larprop){
 
@@ -323,12 +325,15 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
   }
   
   for(auto & sr : fSortedHitsIndex){
+
+    std::vector<LeastSquaresResult_t> results;
+    
     for(auto & hm : sr){
       
       if(fDebug)
 	std::cout << "NEW PLANE REGION!" << std::endl;
 
-      while(1){
+      while(true){
 
 	//create temp vector ...
 	std::vector<size_t> hit_indices; hit_indices.reserve(hm.size());
@@ -344,15 +349,31 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
 	
 	if(fDebugCanvas)
 	  DebugCanvas(hit_collection,hit_indices,result,result_invert,"Least squares fit");
-	
-	if(result.chi2/result.npts < fLineMaxChiSquare)
+
+	if(result.bad_result || result.npts==1)
 	  break;
+
+	if(result.chi2/result.npts < fLineMaxChiSquare){
+	  results.emplace_back(result);
+	  break;
+	}
 	
-	RemoveHitsBadMatch(hit_collection,hm,result,result_invert);
+	RemoveHitsBadMatch(hm,result,result_invert);
 	
-      }
-    }
-  }
+      }//end while true
+      
+    }//end loop over planes
+
+    //if we had a bad result somewhere, no tag
+    if(results.size()!=sr.size())
+      continue;
+    
+    CreateTagObject(results,geom,detprop,tag_collection);
+    
+    
+  }//end loop over search regions
+
+
 }
 
 void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection,
@@ -422,7 +443,7 @@ std::vector<unsigned int> trkeff::TagCreatorAlg::ClusterHits( std::vector<recob:
   
 }
 
-trkeff::LinearLeastSquaresFit::LeastSquaresResult_t
+trkeff::TagCreatorAlg::LeastSquaresResult_t
 trkeff::TagCreatorAlg::RawLeastSquaresFit(std::vector<recob::Hit> const& hit_collection,
 					  std::vector<size_t> const& hit_index,
 					  bool invert)
@@ -444,40 +465,109 @@ trkeff::TagCreatorAlg::RawLeastSquaresFit(std::vector<recob::Hit> const& hit_col
   return result;
 }
 
-void trkeff::TagCreatorAlg::RemoveHitsBadMatch(std::vector<recob::Hit> const& hit_collection,
-					       HitMap_t & hitmap,
-					       trkeff::LinearLeastSquaresFit::LeastSquaresResult_t const& lsq_result,
-					       trkeff::LinearLeastSquaresFit::LeastSquaresResult_t const& lsq_result_invert){
+void trkeff::TagCreatorAlg::RemoveHitsBadMatch(HitMap_t & hitmap,
+					       LeastSquaresResult_t const& lsq_result,
+					       LeastSquaresResult_t const& lsq_result_invert){
 
-  double max_diff=0;
-  double max_diff_invert=0;
-  double line_value=0;
-  double line_value_invert=0;
-  auto max_iter = hitmap.begin();
-  auto max_iter_invert = hitmap.begin();
-  for(auto ih=hitmap.begin(); ih!=hitmap.end(); ++ih){
+  for(auto ih=hitmap.begin(); ih!=hitmap.end(); ++ih)
+    if(ih->second == lsq_result.max_outlier_index ||
+       ih->second == lsq_result_invert.max_outlier_index)
+      hitmap.erase(ih);
+  
+}
 
-    line_value = hit_collection[ih->second].WireID().Wire*lsq_result.slope + lsq_result.intercept;
-    if(max_diff < std::abs(hit_collection[ih->second].PeakTime()-line_value)){
-      max_diff = std::abs(hit_collection[ih->second].PeakTime()-line_value);
-      max_iter = ih;
-    }
+bool trkeff::TagCreatorAlg::CreateTagObject(std::vector<LeastSquaresResult_t> const& results,
+					    geo::GeometryCore        & geom,
+					    util::DetectorProperties & detprop,
+					    std::vector<TrkEffTag> & tag_collection){
 
-    line_value_invert = hit_collection[ih->second].PeakTime()*lsq_result_invert.slope + lsq_result_invert.intercept;
-    if(max_diff_invert < std::abs((double)hit_collection[ih->second].WireID().Wire-line_value_invert)){
-      max_diff_invert = std::abs((double)hit_collection[ih->second].WireID().Wire-line_value_invert);
-      max_iter_invert = ih;
-    }
+  //creating things not out of the inverted results
+  if(results.size()<2)
+    return false;
 
-  }
+  const size_t n_pair = results.size()*(results.size()-1) / 2;
+  std::vector<double> min_x_coordinates(results.size());
+  std::vector<double> max_x_coordinates(results.size());
 
-  if(max_iter!=max_iter_invert){
-    hitmap.erase(max_iter);
-    hitmap.erase(max_iter_invert);
-  }
-  else
-    hitmap.erase(max_iter);
+  std::vector<double> min_y_coordinates(n_pair);
+  std::vector<double> min_z_coordinates(n_pair);
+  std::vector<double> max_y_coordinates(n_pair);
+  std::vector<double> max_z_coordinates(n_pair);
+
+  std::array<double,3> start_coordinates{0,0,0};
+  std::array<double,3> end_coordinates{0,0,0};
+  
+  size_t i_pair=0;
+  unsigned int total_npts=0,double_npts=0;
+  double chi2=0;
+  for(size_t ip=0; ip<results.size(); ++ip){
+
+    chi2 += results[ip].chi2;
     
+    min_x_coordinates[ip] =
+      ((results[ip].min_wire.Wire*results[ip].slope+results[ip].intercept)-
+       detprop.GetXTicksOffset(results[ip].min_wire.Plane,0,0))*
+      detprop.GetXTicksCoefficient();
+    max_x_coordinates[ip] =
+      ((results[ip].max_wire.Wire*results[ip].slope+results[ip].intercept)-
+       detprop.GetXTicksOffset(results[ip].min_wire.Plane,0,0))*
+      detprop.GetXTicksCoefficient();
+    
+    start_coordinates[0] += min_x_coordinates[ip]*results[ip].npts;
+    end_coordinates[0]   += max_x_coordinates[ip]*results[ip].npts;
+
+    total_npts += results[ip].npts;
+    
+    for(size_t jp=ip+1; jp<results.size(); ++jp){
+      geom.IntersectionPoint(results[ip].min_wire,results[jp].min_wire,
+			     min_y_coordinates[i_pair],min_z_coordinates[i_pair]);
+      geom.IntersectionPoint(results[ip].max_wire,results[jp].max_wire,
+			     max_y_coordinates[i_pair],max_z_coordinates[i_pair]);
+
+      start_coordinates[1] += min_y_coordinates[i_pair]*(results[ip].npts+results[jp].npts);
+      start_coordinates[2] += min_z_coordinates[i_pair]*(results[ip].npts+results[jp].npts);
+      end_coordinates[1] += max_y_coordinates[i_pair]*(results[ip].npts+results[jp].npts);
+      end_coordinates[2] += max_z_coordinates[i_pair]*(results[ip].npts+results[jp].npts);
+      
+      double_npts+=results[ip].npts+results[jp].npts;
+      ++i_pair;
+
+    }
+  }
+
+  start_coordinates[0] /= total_npts;
+  end_coordinates[0] /= total_npts;
+  start_coordinates[1] /= double_npts;
+  start_coordinates[2] /= double_npts;
+  end_coordinates[1] /= double_npts;
+  end_coordinates[2] /= double_npts;
+
+  chi2 /= total_npts;
+  
+  if(fDebug){
+    for(size_t i_p=0; i_p<min_x_coordinates.size(); ++i_p)
+      std::cout << "\tx-coordinate, plane " << i_p << " (x_min,x_max)= ("
+		<< min_x_coordinates[i_p] << "," << max_x_coordinates[i_p] << ")" << std::endl;
+	
+    for(size_t i_p=0; i_p<min_y_coordinates.size(); ++i_p)
+      std::cout << "\tPair " << i_p
+		<< " (y_min,z_min)=("
+		<< min_y_coordinates[i_p] << "," << min_z_coordinates[i_p] << ")"
+		<< " (y_max,z_max)=("
+		<< max_y_coordinates[i_p] << "," << max_z_coordinates[i_p] << ")" << std::endl;
+
+    std::cout << "\tAveraged "
+		<< " (x_min,y_min,z_min)=("
+		<< start_coordinates[0] << "," << start_coordinates[1] << "," << start_coordinates[2] << ")"
+		<< " (x_max,y_max,z_max)=("
+		<< end_coordinates[0] << "," << end_coordinates[1] << "," << end_coordinates[2] << ")" << std::endl;
+  }
+
+  
+  
+  tag_collection.emplace_back(start_coordinates,end_coordinates,chi2);
+  
+  return true;
 }
 
 #endif
