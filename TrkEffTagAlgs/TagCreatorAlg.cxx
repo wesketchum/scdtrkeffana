@@ -350,7 +350,7 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
 	if(fDebugCanvas)
 	  DebugCanvas(hit_collection,hit_indices,result,result_invert,"Least squares fit");
 
-	if(result.bad_result || result.npts==1)
+	if(result.bad_result || result.npts<2)
 	  break;
 
 	if(result.chi2/result.npts < fLineMaxChiSquare){

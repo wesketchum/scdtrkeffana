@@ -40,6 +40,11 @@ trkeff::LinearLeastSquaresFit::LeastSquaresResult_t
     _sum_xy += (double)hit_collection[i_h].WireID().Wire * hit_collection[i_h].PeakTime();
   }
 
+  if(std::abs(_n*_sum_x2-_sum_x*_sum_x)<1e-3){
+    result.bad_result=true;
+    return result;
+  }
+  
   result.intercept =  (_sum_y*_sum_x2 - _sum_x*_sum_xy)/(_n*_sum_x2 - _sum_x*_sum_x);
   result.slope     = (_n*_sum_xy - _sum_x*_sum_y)/(_n*_sum_x2 - _sum_x*_sum_x);
 

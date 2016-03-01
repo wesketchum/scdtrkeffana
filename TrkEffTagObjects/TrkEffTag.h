@@ -29,7 +29,9 @@ namespace trkeff {
   public:
 
     typedef struct TrkEffTag_Tree {
-
+      
+      TrkEffTag_Tree(){};
+      
     TrkEffTag_Tree(TrkEffTag const& tag) :
       x_start(tag.StartPoint()[0]), y_start(tag.StartPoint()[1]), z_start(tag.StartPoint()[2]),
 	x_end(tag.EndPoint()[0]), y_end(tag.EndPoint()[1]), z_end(tag.EndPoint()[2]),
@@ -48,6 +50,7 @@ namespace trkeff {
       double phi;
     } TrkEffTag_Tree_t;
     
+
     TrkEffTag(std::array<double,3> const& start, std::array<double,3> const& end,
 	      double const& chi2)//, std::set<geo::WireID> const& wires)
       {
