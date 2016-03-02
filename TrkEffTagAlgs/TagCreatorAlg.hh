@@ -56,6 +56,8 @@ public:
   std::vector< double >              fMinHitAmplitudes;      // min hit amplitudes per plane in combination
   std::vector< double >              fMaxHitAmplitudes;      // max hit ampltidues per plane in combination
   std::vector< double >              fMaxHitWidths;          // max hit rms per plane in combination
+  std::vector< double >              fMinHitWidths;          // min hit rms per plane in combination
+  std::vector< double >              fMaxPositionDiff;       // max position difference allowed from tag in each plane
   bool                               fDebug; //run functions for debugging
   bool                               fDebugCanvas; //run functions for debugging
 

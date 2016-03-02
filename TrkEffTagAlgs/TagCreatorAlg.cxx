@@ -2,6 +2,7 @@
 #define TRKEFF_TAGCREATORALG_CXX
 
 #include <iostream>
+#include <limits>
 
 #include "cetlib/exception.h"
 
@@ -39,6 +40,8 @@ void trkeff::TagCreatorAlg::FillConfigParameters(fhicl::ParameterSet const& p)
   fMinHitAmplitudes = p.get< std::vector<double> >("MinHitAmplitudes");
   fMaxHitAmplitudes = p.get< std::vector<double> >("MaxHitAmplitudes");
   fMaxHitWidths     = p.get< std::vector<double> >("MaxHitWidths");
+  fMinHitWidths     = p.get< std::vector<double> >("MinHitWidths");
+  fMaxPositionDiff  = p.get< std::vector<double> >("MaxPositionDiff");
   fDBScan.reconfigure(p.get< fhicl::ParameterSet >("DBScanAlg"));
   fDebug = p.get<bool>("Debug",false);
   fDebugCanvas = p.get<bool>("DebugCanvas",false);
@@ -78,6 +81,12 @@ void trkeff::TagCreatorAlg::ProcessConfigParameters(geo::GeometryCore const& geo
     throw cet::exception("trkeff::TagCreatorAlg::Configure")
       << "fMaxHitWidths must have same size as nplanes =" << geo.Nplanes() << ".\n";
 
+  if(fMinHitWidths.size()==1)
+    fMinHitWidths = std::vector<double>(geo.Nplanes(),fMinHitWidths[0]);
+  if(fMinHitWidths.size()!=geo.Nplanes())
+    throw cet::exception("trkeff::TagCreatorAlg::Configure")
+      << "fMinHitWidths must have same size as nplanes =" << geo.Nplanes() << ".\n";
+
   for(size_t i_p=0; i_p<fMaxHitAmplitudes.size(); ++i_p){
     if(fMaxHitAmplitudes[i_p]<fMinHitAmplitudes[i_p])
       throw cet::exception("trkeff::TagCreatorAlg::Configure")
@@ -87,6 +96,23 @@ void trkeff::TagCreatorAlg::ProcessConfigParameters(geo::GeometryCore const& geo
 	<< "MinHitAmplitude must be greater than zero\n";
   }
 
+  for(size_t i_p=0; i_p<fMaxHitWidths.size(); ++i_p){
+    if(fMaxHitWidths[i_p]<fMinHitWidths[i_p])
+      throw cet::exception("trkeff::TagCreatorAlg::Configure")
+	<< "MaxHitAmplitude must be greater than MinHitAmplitude\n";
+    if(fMinHitWidths[i_p]<0)
+      throw cet::exception("trkeff::TagCreatorAlg::Configure")
+	<< "MinHitAmplitude must be greater than zero\n";
+  }
+
+  if(fMaxPositionDiff.size()!=3){
+      throw cet::exception("trkeff::TagCreatorAlg::Configure")
+	<< "MaxPositionDiff has wrong size (!=3)\n";
+  }
+  for(auto & diff : fMaxPositionDiff)
+    if(diff<0) diff = std::numeric_limits<double>::max();
+  
+  
   fSearchRegionsWires.resize(fSearchRegions.size(),WireIDRegionByPlane_t(geo.Nplanes()));
   for (size_t i_s=0; i_s<fSearchRegions.size(); ++i_s)
     TranslateSearchRegion(i_s,geo);
@@ -414,7 +440,9 @@ void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const
       if(hit_collection[i_h].WireID().Wire>=fSearchRegionsWires[i_s][i_p][0].Wire &&
 	 hit_collection[i_h].WireID().Wire<=fSearchRegionsWires[i_s][i_p][1].Wire &&
 	 hit_collection[i_h].PeakAmplitude() > fMinHitAmplitudes[i_p] &&
-	 hit_collection[i_h].PeakAmplitude() < fMaxHitAmplitudes[i_p])
+	 hit_collection[i_h].PeakAmplitude() < fMaxHitAmplitudes[i_p] &&
+	 hit_collection[i_h].RMS() > fMinHitWidths[i_p] &&
+	 hit_collection[i_h].RMS() < fMaxHitWidths[i_p])
 	fSortedHitsIndex[i_s][i_p][hit_collection[i_h].PeakTime()-detprop.GetXTicksOffset(i_p,0,0)] = i_h;
     }
   }
@@ -591,7 +619,15 @@ bool trkeff::TagCreatorAlg::CreateTagObject(std::vector<LeastSquaresResult_t> co
 		<< end_coordinates[0] << "," << end_coordinates[1] << "," << end_coordinates[2] << ")" << std::endl;
   }
 
-  
+  for(size_t i_p=0; i_p<min_x_coordinates.size(); ++i_p)
+    for(size_t j_p=0; j_p<min_x_coordinates.size(); ++j_p)
+      if(std::abs(min_x_coordinates[i_p]-min_x_coordinates[j_p]) > fMaxPositionDiff[0] ||
+	 std::abs(max_x_coordinates[i_p]-max_x_coordinates[j_p]) > fMaxPositionDiff[0] ||
+	 std::abs(min_y_coordinates[i_p]-min_y_coordinates[j_p]) > fMaxPositionDiff[1] ||
+	 std::abs(max_y_coordinates[i_p]-max_y_coordinates[j_p]) > fMaxPositionDiff[1] ||
+	 std::abs(min_z_coordinates[i_p]-min_z_coordinates[j_p]) > fMaxPositionDiff[2] ||
+	 std::abs(max_z_coordinates[i_p]-max_z_coordinates[j_p]) > fMaxPositionDiff[2])
+	return false;
   
   tag_collection.emplace_back(start_coordinates,end_coordinates,chi2,wireIDVector);
   
