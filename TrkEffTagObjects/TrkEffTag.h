@@ -11,7 +11,8 @@
 #include "SimpleTypesAndConstants/geo_types.h"
 
 #include <stdint.h>
-#include <set>
+#include <vector>
+#include <algorithm>
 
 #ifndef __GCCXML__
 #include <array>
@@ -52,7 +53,7 @@ namespace trkeff {
     
 
     TrkEffTag(std::array<double,3> const& start, std::array<double,3> const& end,
-	      double const& chi2)//, std::set<geo::WireID> const& wires)
+	      double const& chi2, std::vector<geo::WireID> const& wires)
       {
 	for(size_t i=0; i<3; i++){
 	  fStartPoint[i] = start[i];
@@ -61,13 +62,15 @@ namespace trkeff {
 	//fStartPoint = start;
 	//fEndPoint   = end;
 	fChi2       = chi2;
-	//fWires      = wires;
-
+	fWires      = wires;
+	std::sort(fWires.begin(),fWires.end());
+	std::unique(fWires.begin(),fWires.end());
+	
 	CalculateAngles();
       }    
     
     TrkEffTag(double const start[], double const end[],
-	      double const& chi2)//, std::set<geo::WireID> const& wires)
+	      double const& chi2, std::vector<geo::WireID> const& wires)
       {
 	for(size_t i=0; i<3; i++){
 	  fStartPoint[i] = *(start+i);
@@ -75,19 +78,21 @@ namespace trkeff {
 	}
 
 	fChi2       = chi2;
-	//fWires      = wires;
+	fWires      = wires;
+	std::sort(fWires.begin(),fWires.end());
+	std::unique(fWires.begin(),fWires.end());
 
 	CalculateAngles();
       }    
 
-    std::array<double,3>  StartPoint()  const;
-    std::array<double,3>  EndPoint()    const;
-    double                Chi2()       const;
-    //std::set<geo::WireID> Wires()      const;
-    double                Theta()      const;
-    double                ThetaYZ()    const;
-    double                ThetaXZ()    const;
-    double                Phi()        const;
+    std::array<double,3>     StartPoint()  const;
+    std::array<double,3>     EndPoint()    const;
+    double                   Chi2()       const;
+    std::vector<geo::WireID> Wires()      const;
+    double                   Theta()      const;
+    double                   ThetaYZ()    const;
+    double                   ThetaXZ()    const;
+    double                   Phi()        const;
 
     TrkEffTag_Tree_t GetRootTreeType() const;
     
@@ -97,7 +102,7 @@ namespace trkeff {
     double fEndPoint[3];
     double fChi2;
 
-    //std::set<geo::WireID> fWires;
+    std::vector<geo::WireID> fWires;
     
     double fTheta;
     double fThetaYZ;
@@ -114,12 +119,12 @@ namespace trkeff {
   inline std::array<double,3>  trkeff::TrkEffTag::EndPoint()   const
     { return std::array<double,3>{fEndPoint[0],fEndPoint[1],fEndPoint[2]}; }
   
-  inline double                trkeff::TrkEffTag::Chi2()       const { return fChi2;       }
-  //inline std::set<geo::WireID> trkeff::TrkEffTag::Wires()      const { return fWires;      }
-  inline double                trkeff::TrkEffTag::Theta()      const { return fTheta;      }
-  inline double                trkeff::TrkEffTag::ThetaYZ()    const { return fThetaYZ;    }
-  inline double                trkeff::TrkEffTag::ThetaXZ()    const { return fThetaXZ;    }
-  inline double                trkeff::TrkEffTag::Phi()        const { return fPhi;        }
+  inline double                   trkeff::TrkEffTag::Chi2()       const { return fChi2;       }
+  inline std::vector<geo::WireID> trkeff::TrkEffTag::Wires()      const { return fWires;      }
+  inline double                   trkeff::TrkEffTag::Theta()      const { return fTheta;      }
+  inline double                   trkeff::TrkEffTag::ThetaYZ()    const { return fThetaYZ;    }
+  inline double                   trkeff::TrkEffTag::ThetaXZ()    const { return fThetaXZ;    }
+  inline double                   trkeff::TrkEffTag::Phi()        const { return fPhi;        }
 
   inline trkeff::TrkEffTag::TrkEffTag_Tree_t trkeff::TrkEffTag::GetRootTreeType() const
   { return TrkEffTag_Tree_t(*this); }

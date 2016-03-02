@@ -84,8 +84,8 @@ public:
   void TranslateSearchRegion(size_t, geo::GeometryCore const&);
   void SetPlaneCombination(geo::GeometryCore const&);
   void SortHitsBySearchRegion(std::vector<recob::Hit> const&, util::DetectorProperties &);
-  void RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> const&,
-				  HitMapByPlane_t & hitmaps);
+  void AddWireIDVectorBySearchRegion(WireIDRegionByPlane_t const&, std::vector<geo::WireID> &);
+  void RemoveHitsWithoutTimeMatch(std::vector<recob::Hit> const&, HitMapByPlane_t & hitmaps);
   std::vector<unsigned int> ClusterHits( std::vector<recob::Hit> const&, std::vector<size_t> const&,
 					 geo::GeometryCore const&,
 					 util::DetectorProperties const&,
@@ -97,6 +97,7 @@ public:
 			  LeastSquaresResult_t const&);
 
   bool CreateTagObject(std::vector<LeastSquaresResult_t> const&,
+		       std::vector<geo::WireID> const&,
 		       geo::GeometryCore &,
 		       util::DetectorProperties &,
 		       std::vector<TrkEffTag> &);

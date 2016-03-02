@@ -8,9 +8,10 @@
 <lcgdict>
 
   <class name="trkeff::TrkEffTag" ClassVersion="10">
-   <version ClassVersion="10" checksum="3863632712"/>
+   <version ClassVersion="10" checksum="1385939572"/>
   </class>
   
+ <class name="std::vector<geo::WireID>"/>
  <class name="std::vector<trkeff::TrkEffTag>"/>
  <class name="art::Wrapper< std::vector<trkeff::TrkEffTag> >"/>
  

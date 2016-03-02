@@ -289,7 +289,7 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
     PrintHitsBySearchRegion(hit_collection);
   }
 
-
+  size_t i_s=0;
   for(auto & sr : fSortedHitsIndex){
 
     if(fDebugCanvas) {
@@ -367,14 +367,41 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
     //if we had a bad result somewhere, no tag
     if(results.size()!=sr.size())
       continue;
+
+    //get the WireID vector for WireIDs considered
+    std::vector<geo::WireID> wireIDVector;
+    AddWireIDVectorBySearchRegion(fSearchRegionsWires[i_s],wireIDVector);
     
-    CreateTagObject(results,geom,detprop,tag_collection);
+    CreateTagObject(results,wireIDVector,geom,detprop,tag_collection);
     
-    
+    ++i_s;
   }//end loop over search regions
 
 
 }
+
+void trkeff::TagCreatorAlg::AddWireIDVectorBySearchRegion(WireIDRegionByPlane_t const& search_region,
+							  std::vector<geo::WireID> & wireIDVector){
+  
+  geo::WireID start_wire,end_wire;
+  for(auto const& wire_region : search_region){
+    
+    if(wire_region[0].Wire > wire_region[1].Wire){
+      start_wire = wire_region[1];
+      end_wire = wire_region[0];
+    }
+    else{
+      start_wire = wire_region[0];
+      end_wire = wire_region[1];
+    }
+    
+    wireIDVector.reserve( wireIDVector.size() + end_wire.Wire - start_wire.Wire +1);
+    for(auto wire=start_wire.Wire; wire<=end_wire.Wire; ++wire)
+      wireIDVector.emplace_back(start_wire,wire);
+  }
+  
+}
+
 
 void trkeff::TagCreatorAlg::SortHitsBySearchRegion(std::vector<recob::Hit> const& hit_collection,
 						   util::DetectorProperties & detprop){
@@ -477,6 +504,7 @@ void trkeff::TagCreatorAlg::RemoveHitsBadMatch(HitMap_t & hitmap,
 }
 
 bool trkeff::TagCreatorAlg::CreateTagObject(std::vector<LeastSquaresResult_t> const& results,
+					    std::vector<geo::WireID> const& wireIDVector,
 					    geo::GeometryCore        & geom,
 					    util::DetectorProperties & detprop,
 					    std::vector<TrkEffTag> & tag_collection){
@@ -565,7 +593,7 @@ bool trkeff::TagCreatorAlg::CreateTagObject(std::vector<LeastSquaresResult_t> co
 
   
   
-  tag_collection.emplace_back(start_coordinates,end_coordinates,chi2);
+  tag_collection.emplace_back(start_coordinates,end_coordinates,chi2,wireIDVector);
   
   return true;
 }
