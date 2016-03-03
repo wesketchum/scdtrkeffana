@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <vector>
 #include <algorithm>
+#include <string>
 
 #ifndef __GCCXML__
 #include <array>
@@ -31,12 +32,13 @@ namespace trkeff {
 
     typedef struct TrkEffTag_Tree {
       
-      TrkEffTag_Tree(){};
+    TrkEffTag_Tree(){};
       
     TrkEffTag_Tree(TrkEffTag const& tag) :
       x_start(tag.StartPoint()[0]), y_start(tag.StartPoint()[1]), z_start(tag.StartPoint()[2]),
 	x_end(tag.EndPoint()[0]), y_end(tag.EndPoint()[1]), z_end(tag.EndPoint()[2]),
-	chi2(tag.Chi2()), theta(tag.Theta()), thetaYZ(tag.ThetaYZ()), thetaXZ(tag.ThetaXZ()), phi(tag.Phi()) {}
+	chi2(tag.Chi2()), theta(tag.Theta()), thetaYZ(tag.ThetaYZ()), thetaXZ(tag.ThetaXZ()), phi(tag.Phi())
+      {}
       
       double x_start;
       double y_start;
@@ -49,6 +51,9 @@ namespace trkeff {
       double thetaYZ;
       double thetaXZ;
       double phi;
+
+      std::string Leaflist()
+	{ return "x_start/D:y_start/D:z_start/D:x_end/D:y_end/D:z_end/D:chi2/D:theta/D:thetaYZ/D:thetaXZ/D:phi/D"; }
     } TrkEffTag_Tree_t;
     
 

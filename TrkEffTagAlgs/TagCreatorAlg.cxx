@@ -21,15 +21,26 @@
 trkeff::TagCreatorAlg::TagCreatorAlg()
 {}
 
-void trkeff::TagCreatorAlg::SetupOutputTree(TTree* tfs_tree)
+void trkeff::TagCreatorAlg::SetupOutputTree(TTree* tfs_tree, TTree* event_tree)
 {
   fTree = tfs_tree;
   fTree->SetObject(fTree->GetName(),"TagCreatorAlg Tree");
+  fTree->Branch("tag",&fTag,fTag.Leaflist().c_str());
+  fTree->Branch("event",&fEvent);
+  fTree->Branch("run",&fRun);
+
+  fEventTree = event_tree;
+  fEventTree->SetObject(fEventTree->GetName(),"TagCreatorAlg Per-Event Tree");
+  fEventTree->Branch("event",&fEvent);
+  fEventTree->Branch("run",&fRun);
+  fEventTree->Branch("ntags",&fNtags);
+  
+  
 }
 
 void trkeff::TagCreatorAlg::FillConfigParameters(fhicl::ParameterSet const& p)
 {
-  fSearchRegions = p.get< std::vector< std::vector<double> > >("SearchRegions");
+  fSearchRegions = p.get< std::vector< std::vector<double> > >("SearchRegions",std::vector< std::vector<double> >() );
   fTagWiresPerPlane = p.get< std::vector<unsigned int> >("TagWiresPerPlane");
   fLineMaxChiSquare = p.get< double >("LineMaxChiSquare");
   fTimeMatch = p.get< double >("TimeMatch");
@@ -120,6 +131,17 @@ void trkeff::TagCreatorAlg::ProcessConfigParameters(geo::GeometryCore const& geo
   fSortedHitsIndex.resize(fSearchRegionsWires.size(),HitMapByPlane_t(geo.Nplanes()));
     
   
+}
+
+void trkeff::TagCreatorAlg::ResetSearchRegions( std::vector< std::vector<double> > const& search_regions,
+						geo::GeometryCore const& geo )
+{
+  fSearchRegions = search_regions;
+  fSearchRegionsWires.resize(fSearchRegions.size(),WireIDRegionByPlane_t(geo.Nplanes()));
+  for (size_t i_s=0; i_s<fSearchRegions.size(); ++i_s)
+    TranslateSearchRegion(i_s,geo);
+  
+  fSortedHitsIndex.resize(fSearchRegionsWires.size(),HitMapByPlane_t(geo.Nplanes()));
 }
 
 void trkeff::TagCreatorAlg::TranslateSearchRegion(size_t i_s, geo::GeometryCore const& geo){
@@ -301,8 +323,12 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
 					std::vector<TrkEffTag>   & tag_collection,
 					geo::GeometryCore        & geom,
 					util::DetectorProperties & detprop,
-					util::LArProperties      const& larprop){
+					util::LArProperties      const& larprop,
+					unsigned int             const& run,
+					unsigned int             const& event){
 
+  fEvent = event; fRun = run;
+  
   if(fDebug) std::cout << "In CreateTags..." << std::endl;
 
   Cleanup();
@@ -404,7 +430,9 @@ void trkeff::TagCreatorAlg::CreateTags( std::vector<recob::Hit>  const& hit_coll
     ++i_s;
   }//end loop over search regions
 
-
+  fNtags = tag_collection.size();
+  if(fEventTree) fEventTree->Fill();
+  
 }
 
 void trkeff::TagCreatorAlg::AddWireIDVectorBySearchRegion(WireIDRegionByPlane_t const& search_region,
@@ -632,6 +660,9 @@ bool trkeff::TagCreatorAlg::CreateTagObject(std::vector<LeastSquaresResult_t> co
   
   tag_collection.emplace_back(start_coordinates,end_coordinates,chi2,wireIDVector);
   
+  fTag = tag_collection.back().GetRootTreeType();
+  if(fTree) fTree->Fill();
+
   return true;
 }
 

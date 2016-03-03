@@ -6,7 +6,7 @@
 void trkeff::TagCompareAlg::SetupOutputTree(TTree* tree){
 
       fTree = tree;
-      fTree->Branch("tag",&fTag,"x_start/D:y_start/D:z_start/D:x_end/D:y_end/D:z_end/D:chi2/D:theta/D:thetaYZ/D:thetaXZ/D:phi/D");
+      fTree->Branch("tag",&fTag,fTag.Leaflist().c_str());
       fTree->Branch("mctrk",&fMCTrack,"x_start/D:y_start/D:z_start/D:x_end/D:y_end/D:z_end/D");
       fTree->Branch("diff",&fClosestPts,"x_start/D:y_start/D:z_start/D:dist_start/D:x_end/D:y_end/D:z_end/D:dist_end/D");
   

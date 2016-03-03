@@ -65,6 +65,11 @@ trkeff::TrkEffTagCreator::TrkEffTagCreator(fhicl::ParameterSet const & p)
 {
   produces< std::vector<trkeff::TrkEffTag> >();
   this->reconfigure(p);
+
+  art::ServiceHandle<art::TFileService> tfs;
+  fTagCreator.SetupOutputTree(tfs->make<TTree>("tag_tree","Tag tree"),
+			      tfs->make<TTree>("event_tree","Event tree"));
+			    
 }
 
 void trkeff::TrkEffTagCreator::produce(art::Event & e)
@@ -83,7 +88,9 @@ void trkeff::TrkEffTagCreator::produce(art::Event & e)
 			 *tagHandle,
 			 *geoHandle,
 			 *detpHandle,
-			 *larpHandle);
+			 *larpHandle,
+			 e.run(),
+			 e.event());
 
   e.put(std::move(tagHandle));
   

@@ -8,7 +8,7 @@
 <lcgdict>
 
   <class name="trkeff::TrkEffTag" ClassVersion="10">
-   <version ClassVersion="10" checksum="1385939572"/>
+   <version ClassVersion="10" checksum="569343670"/>
   </class>
   
  <class name="std::vector<geo::WireID>"/>

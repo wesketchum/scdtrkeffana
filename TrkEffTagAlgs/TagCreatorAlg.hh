@@ -16,6 +16,8 @@
 #include "LinearLeastSquaresFit.hh"
 #include "SimpleTypesAndConstants/geo_types.h"
 
+#include "TrkEffTagObjects/TrkEffTag.h"
+
 namespace recob{ class Hit; }
 namespace geo{ class GeometryCore; }
 //namespace cluster{ class DBScanAlg; }
@@ -23,7 +25,6 @@ namespace util{ class DetectorProperties; }
 
 namespace trkeff{
   class TagCreatorAlg;
-  class TrkEffTag;
 }
 
 class trkeff::TagCreatorAlg{
@@ -34,17 +35,21 @@ public:
   TagCreatorAlg();
 
   void Configure( fhicl::ParameterSet const&, geo::GeometryCore const& );
+  void ResetSearchRegions( std::vector< std::vector<double> > const&,
+			   geo::GeometryCore const& );
 
   void CreateTags( std::vector<recob::Hit>  const&,
 		   std::vector<TrkEffTag>   &,
 		   geo::GeometryCore        &,
 		   util::DetectorProperties &,
-		   util::LArProperties      const& );
+		   util::LArProperties      const&,
+		   unsigned int const&,
+		   unsigned int const&);
   
   /// Default destructor
   virtual ~TagCreatorAlg(){ if(fDebugCanvas) delete fCanvas; };
 
-  void SetupOutputTree(TTree*);
+  void SetupOutputTree(TTree*,TTree*);
   
  private:
 
@@ -122,6 +127,15 @@ public:
 
   
   TTree*      fTree;
+  TTree*      fEventTree;
+
+  //variables in trees
+  TrkEffTag::TrkEffTag_Tree_t fTag;
+
+  unsigned int    fEvent;
+  unsigned int    fRun;
+  unsigned int    fNtags;
+
   TCanvas*    fCanvas;
   
 };
