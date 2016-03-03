@@ -42,7 +42,7 @@ public:
 		   util::LArProperties      const& );
   
   /// Default destructor
-  virtual ~TagCreatorAlg(){ delete fCanvas; };
+  virtual ~TagCreatorAlg(){ if(fDebugCanvas) delete fCanvas; };
 
   void SetupOutputTree(TTree*);
   

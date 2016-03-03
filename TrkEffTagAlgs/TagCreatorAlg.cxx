@@ -19,11 +19,7 @@
 #include "TGraphErrors.h"
 
 trkeff::TagCreatorAlg::TagCreatorAlg()
-{
-  if(fDebugCanvas){
-    fCanvas = new TCanvas("canvas","Tag Creator Debug Canvas",600,600);
-  }
-}
+{}
 
 void trkeff::TagCreatorAlg::SetupOutputTree(TTree* tfs_tree)
 {
@@ -49,7 +45,11 @@ void trkeff::TagCreatorAlg::FillConfigParameters(fhicl::ParameterSet const& p)
 }
 
 void trkeff::TagCreatorAlg::ProcessConfigParameters(geo::GeometryCore const& geo){
-  
+
+  if(fDebugCanvas){
+    fCanvas = new TCanvas("canvas","Tag Creator Debug Canvas",600,600);
+  }
+
   if(fLineMaxChiSquare<=0)
     throw cet::exception("trkeff::TagCreatorAlg::Configure")
       << "LineMaxChiSquare must be greater than zero\n";
@@ -252,7 +252,8 @@ void trkeff::TagCreatorAlg::DebugCanvas(std::vector<recob::Hit>  const& hit_coll
   title += ";Wire number;Time (ticks)";
   graph.SetTitle(title.c_str());
   graph.SetMarkerStyle(7);
-  fCanvas->cd();
+
+  fCanvas->Draw();
   graph.Draw("AP");
   fCanvas->Update();
 
